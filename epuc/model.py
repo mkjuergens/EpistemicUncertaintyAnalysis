@@ -35,6 +35,31 @@ class PredictorModel(nn.Module):
 
         return x
     
+class RegressorModel(nn.Module):
+
+    def __init__(self, hidden_dims: int = 10, use_softplus: bool = True ):
+        super().__init__()
+        self.hidden_dims = hidden_dims
+        self.fc1 = nn.Linear(1, hidden_dims)
+        self.fc2 = nn.Linear(hidden_dims, hidden_dims)
+        self.fc_mu = nn.Linear(hidden_dims, 1)
+        self.fc_sigma = nn.Linear(hidden_dims, 1)
+        self.softplus = nn.Softplus()
+        self.use_softplus = use_softplus
+
+    def forward(self, x):
+        if self.use_softplus:
+            x = self.softplus(self.fc1(x))
+            x = self.softplus(self.fc2(x))
+        else:
+            x = self.fc1(x)
+            x = self.fc2(x)
+        
+        mu = self.fc_mu(x)
+        sigma = torch.exp(self.fc_sigma(x))
+
+        return mu, sigma
+    
 
 class BetaNN(nn.Module):
     """
@@ -62,6 +87,39 @@ class BetaNN(nn.Module):
         beta = torch.exp(self.fc_beta(x))
 
         return alpha, beta
+    
+
+class NIGNN(nn.Module):
+
+    def __init__(self, n_hidden: int = 10, use_softplus: bool = True):
+        super().__init__()
+        self.hidden_dims = n_hidden
+        self.fc_1 = nn.Linear(1, n_hidden)
+        self.fc_2 = nn.Linear(n_hidden, n_hidden)
+
+        # parameters of the normal inverse gamma distribution
+        self.fc_gamma = nn.Linear(n_hidden, 1)
+        self.fc_nu = nn.Linear(n_hidden, 1)
+        self.fc_alpha = nn.Linear(n_hidden, 1)
+        self.fc_beta = nn.Linear(n_hidden, 1)
+
+        self.use_softplus = use_softplus
+        self.softplus = nn.Softplus()
+
+    def forward(self, x):
+        if self.use_softplus:
+            x = self.softplus(self.fc_1(x))
+            x = self.softplus(self.fc_2(x))
+        else:
+            x = self.fc_1(x)
+            x = self.fc_2(x)
+        
+        gamma = self.fc_gamma(x)
+        nu = self.softplus(self.fc_nu(x))
+        alpha = self.softplus(self.fc_alpha(x)) + 1
+        beta = self.softplus(self.fc_beta(x))
+
+        return gamma, nu, alpha, beta
     
 if __name__ == "__main__":
     
