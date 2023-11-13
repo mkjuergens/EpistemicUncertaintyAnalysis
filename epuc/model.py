@@ -36,6 +36,9 @@ class PredictorModel(nn.Module):
         return x
     
 class RegressorModel(nn.Module):
+    """Simple neural network for predicting the mean and variance of a normally distributed 
+    random variable, in dependence of the input.
+    """
 
     def __init__(self, hidden_dims: int = 10, use_softplus: bool = True ):
         super().__init__()
@@ -90,6 +93,9 @@ class BetaNN(nn.Module):
     
 
 class NIGNN(nn.Module):
+    """
+    Simple neural network for predicting the parameters of a normal inverse gamma distribution.
+    """
 
     def __init__(self, n_hidden: int = 10, use_softplus: bool = True):
         super().__init__()

@@ -3,8 +3,8 @@ import numpy as np
 
 from epuc.distances import sum_kl_divergence_nig
 
-class NegativeLogLikelihoodLoss(torch.nn.Module):
 
+class NegativeLogLikelihoodLoss(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
@@ -12,13 +12,14 @@ class NegativeLogLikelihoodLoss(torch.nn.Module):
         sigma = torch.clamp(params_normal[1], min=1e-3)
         mu = params_normal[0]
 
-        loss = 0.5 * torch.log(2 * torch.pi * sigma**2) + (y - mu)**2 / (2 * sigma**2)
+        loss = 0.5 * torch.log(2 * torch.pi * sigma**2) + (y - mu) ** 2 / (
+            2 * sigma**2
+        )
 
         return loss.mean()
 
 
 class outer_loss_der(torch.nn.Module):
-
     def __init__(self, lambda_reg: float, epsilon: float = 0.0001):
         super().__init__()
         self.lambda_reg = lambda_reg
@@ -36,12 +37,25 @@ class outer_loss_der(torch.nn.Module):
 
 
 class inner_loss_der(torch.nn.Module):
+    """
+    inner expectation minimization for the NIG-prior case. It optiimzes the parameters
+    of the Normal-Inverse-Gamma distribution which yields estimates of the aleatoric and epsitemic
+    uncertainty as well as predictions, as described in Amini et al.
+    """
 
     def __init__(self, lambda_reg: float, epsilon: float = 0.0001):
+        """
+        Parameters
+        ----------
+        lambda_reg : float
+           weight factor of regulaization
+        epsilon : float, optional
+            _description_, by default 0.0001
+        """
         super().__init__()
         self.lambda_reg = lambda_reg
         self.epsilon = epsilon
-    
+
     def forward(self, params_nig: list, y: torch.tensor):
         if self.lambda_reg > 0.0:
             sum_kl_div = sum_kl_divergence_nig(params_nig, epsilon=self.epsilon)
@@ -51,10 +65,11 @@ class inner_loss_der(torch.nn.Module):
         inner_loss = inner_nig_loss(params_nig, y)
 
         return inner_loss + self.lambda_reg * sum_kl_div
-    
+
 
 def inner_nig_loss(params: list, y: torch.tensor):
-    """secondary loss function using "inner expectation minimisation" and negative log likelihood as primary loss,
+    """
+    secondary loss function using "inner expectation minimisation" and negative log likelihood as primary loss,
     assuming normally distributed data and a normal inverse gamma (NIG) distributed prior distribution.
 
     Parameters
@@ -66,7 +81,7 @@ def inner_nig_loss(params: list, y: torch.tensor):
 
     Returns
     -------
-    log_loss    hybvimo;
+    float
         loss
     """
     gamma, nu, alpha, beta = params
@@ -85,15 +100,14 @@ def inner_nig_loss(params: list, y: torch.tensor):
 
 
 def outer_nig_loss(params: list, y: torch.tensor):
-    gamma, nu, alpha, beta = params[0], params[1], params[2], params[3]
+    gamma, nu, alpha, beta = params
 
-    loss = (
-        -0.5 * ((-alpha / beta) * (y - gamma) ** 2
+    loss = -0.5 * (
+        (-alpha / beta) * (y - gamma) ** 2
         - 1 / nu
         + torch.digamma(alpha)
         - torch.log(beta)
         - torch.log(torch.ones(len(alpha)) * np.pi)
-        )
     )
 
     return loss.sum()

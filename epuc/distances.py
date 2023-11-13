@@ -1,4 +1,3 @@
-
 import numpy as np
 import torch
 import scipy.special as sps
@@ -10,10 +9,12 @@ def kl_divergence_dirichlet(alpha, beta):
     with parameters alpha and beta respectively.
 
     Parameters:
+    ----------------
         alpha (array_like): Parameters of distribution P.
         beta (array_like): Parameters of distribution Q.
 
     Returns:
+    ----------------
         float: KL divergence between P and Q.
     """
     # Ensure the parameters are Numpy arrays
@@ -54,12 +55,13 @@ def kl_divergence_dirichlet_torch(alpha_1, alpha_2):
 
     Parameters:
     ----------------
-    - alpha_1: Parameter vector for the first Dirichlet distribution
-    - alpha_2: Parameter vector for the second Dirichlet distribution
+        alpha_1: Parameter vector for the first Dirichlet distribution
+        alpha_2: Parameter vector for the second Dirichlet distribution
 
     Returns:
     ----------------
-    - KL divergence between the two Dirichlet distributions
+        float:
+            KL divergence between the two Dirichlet distributions
     """
 
     # Gamma function in PyTorch is the factorial for integers, but we can use the lgamma (log-gamma) function directly
@@ -161,7 +163,9 @@ def sum_kl_divergence_nig(params_nig: list, epsilon: float = 0.0001):
         nu.shape == alpha.shape
     ), "parameters of the normal-inverse-gamma distribution should have the same shape"
 
-    kl_div = kl_divergergence_nig_torch(nu.squeeze(), alpha.squeeze(), epsilon=epsilon) # tensor with value per instance
+    kl_div = kl_divergergence_nig_torch(
+        nu.squeeze(), alpha.squeeze(), epsilon=epsilon
+    )  # tensor with value per instance
     sum_kl_div = torch.sum(kl_div)
 
     return sum_kl_div
@@ -171,12 +175,11 @@ if __name__ == "__main__":
     alpha_1 = torch.tensor([0.1, 0.1])
     alpha_2 = torch.ones(2)
 
-
     nu = torch.zeros(10, 1) + 0.1
-    alpha = torch.zeros(10,1) + 0.5
+    alpha = torch.zeros(10, 1) + 0.5
     gamma = torch.zeros(10, 1) + 0.1
     beta = torch.zeros(10, 1) + 0.1
-    params = [gamma,nu, alpha, beta]
+    params = [gamma, nu, alpha, beta]
 
     # now test kl divergence for normal inverse gamma distribution
     nu = torch.tensor([0.1, 0.3])
