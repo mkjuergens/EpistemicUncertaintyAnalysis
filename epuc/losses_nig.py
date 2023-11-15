@@ -5,6 +5,8 @@ from epuc.distances import sum_kl_divergence_nig
 
 
 class NegativeLogLikelihoodLoss(torch.nn.Module):
+    """negative log likelihood loss for the Gaussian distribution.
+    """
     def __init__(self) -> None:
         super().__init__()
 
@@ -22,20 +24,26 @@ class NegativeLogLikelihoodLoss(torch.nn.Module):
 class outer_loss_der(torch.nn.Module):
     """outer expectation minimisation for the NIG-prior case.
     """
-    def __init__(self, lambda_reg: float, type_reg: str = "evidence", epsilon: float = 0.0001):
+    def __init__(self, lambda_reg: float, reg_type: str = "evidence", epsilon: float = 0.0001):
         super().__init__()
         self.lambda_reg = lambda_reg
         self.epsilon = epsilon
+        self.reg_type = reg_type
 
     def forward(self, params_nig: list, y: torch.tensor):
         if self.lambda_reg > 0.0:
-            sum_kl_div = sum_kl_divergence_nig(params_nig, epsilon=self.epsilon)
+            if self.reg_type == "kl":
+                reg = sum_kl_divergence_nig(params_nig, epsilon=self.epsilon)
+            elif self.reg_type == "evidence":
+                reg = evidence_regulizer(params_nig, y)
+            else:
+                raise NotImplementedError
         else:
-            sum_kl_div = 0.0
+            reg = 0.0
 
         outer_loss = outer_nig_loss(params_nig, y)
 
-        return outer_loss + self.lambda_reg * sum_kl_div
+        return outer_loss + self.lambda_reg * reg
 
 
 class inner_loss_der(torch.nn.Module):
@@ -56,7 +64,7 @@ class inner_loss_der(torch.nn.Module):
         reg_type : string
             type of regularization used. Must be in {"kl", "evidence"}
         epsilon : float, optional
-            _description_, by default 0.0001
+            stability parameter, by default 0.0001
         """
         super().__init__()
         self.lambda_reg = lambda_reg
