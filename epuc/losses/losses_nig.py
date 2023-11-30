@@ -5,7 +5,8 @@ from epuc.distances import sum_kl_divergence_nig
 
 
 class NegativeLogLikelihoodLoss(torch.nn.Module):
-    """negative log likelihood loss for the Gaussian distribution.
+    """
+    negative log likelihood loss for the Gaussian distribution.
     """
     def __init__(self) -> None:
         super().__init__()
@@ -22,9 +23,20 @@ class NegativeLogLikelihoodLoss(torch.nn.Module):
 
 
 class outer_loss_der(torch.nn.Module):
-    """outer expectation minimisation for the NIG-prior case.
+    """
+    outer expectation minimisation for the NIG-prior case.
     """
     def __init__(self, lambda_reg: float, reg_type: str = "evidence", epsilon: float = 0.0001):
+        """
+        Parameters
+        ----------
+        lambda_reg : float
+            weight coefficient for the regularization parameter
+        reg_type : str, optional
+            type of regularization used, by default "evidence". other options are {"kl"}
+        epsilon : float, optional
+            parameter adeed enabling computation of KL divergence, by default 0.0001
+        """
         super().__init__()
         self.lambda_reg = lambda_reg
         self.epsilon = epsilon

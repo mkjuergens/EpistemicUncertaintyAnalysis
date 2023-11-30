@@ -1,20 +1,20 @@
-import numpy as np
 import torch
 from torch import nn
+
 
 class PredictorModel(nn.Module):
     """
     Simple neural network for predicting the probability of a binary event.
     """
 
-    def __init__(self, n_hidden_dims: int = 10, out_dim: int = 1, use_relu: bool = False,
+    def __init__(self, hidden_dim: int = 10, output_dim: int = 1, use_relu: bool = False,
                  use_softplus: bool = True, *args, **kwargs) -> None:
         super().__init__()
-        self.n_hidden_dims = n_hidden_dims
+        self.hidden_dim = hidden_dim
 
-        self.fc1 = nn.Linear(1, n_hidden_dims)
-        self.fc2 = nn.Linear(n_hidden_dims, n_hidden_dims)
-        self.fc3 = nn.Linear(n_hidden_dims, out_dim)
+        self.fc1 = nn.Linear(1, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc3 = nn.Linear(hidden_dim, output_dim)
         self.relu = nn.ReLU()
         self.use_relu = use_relu
         self.softplus = nn.Softplus()
@@ -34,19 +34,21 @@ class PredictorModel(nn.Module):
         x = self.sigmoid(self.fc3(x))
 
         return x
+
     
 class RegressorModel(nn.Module):
-    """Simple neural network for predicting the mean and variance of a normally distributed 
+    """
+    Simple neural network for predicting the mean and variance of a normally distributed 
     random variable, in dependence of the input.
     """
 
-    def __init__(self, hidden_dims: int = 10, use_softplus: bool = True ):
+    def __init__(self, hidden_dim: int = 10, use_softplus: bool = True, output_dim: int = 1):
         super().__init__()
-        self.hidden_dims = hidden_dims
-        self.fc1 = nn.Linear(1, hidden_dims)
-        self.fc2 = nn.Linear(hidden_dims, hidden_dims)
-        self.fc_mu = nn.Linear(hidden_dims, 1)
-        self.fc_sigma = nn.Linear(hidden_dims, 1)
+        self.hidden_dim = hidden_dim
+        self.fc1 = nn.Linear(1, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc_mu = nn.Linear(hidden_dim, output_dim)
+        self.fc_sigma = nn.Linear(hidden_dim, output_dim)
         self.softplus = nn.Softplus()
         self.use_softplus = use_softplus
 
@@ -66,15 +68,15 @@ class RegressorModel(nn.Module):
 
 class BetaNN(nn.Module):
     """
-    Simple neural network for predicting the parameters of a Beta distribution.
+    Simple neural network for predicting the parameters of (uni- or multivariate) a Beta distribution.
     """
 
-    def __init__(self,n_hidden: int = 10, use_softplus: bool = True, *args, **kwargs) -> None:
+    def __init__(self,hidden_dim: int = 10, use_softplus: bool = True, output_dim: int = 1):
         super().__init__()
-        self.fc1 = nn.Linear(1, n_hidden)
-        self.fc2 = nn.Linear(n_hidden, n_hidden)
-        self.fc_alpha = nn.Linear(n_hidden, 1)
-        self.fc_beta = nn.Linear(n_hidden, 1)
+        self.fc1 = nn.Linear(1, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc_alpha = nn.Linear(hidden_dim, output_dim)
+        self.fc_beta = nn.Linear(hidden_dim, output_dim)
         self.use_softplus = use_softplus
         self.softplus = nn.Softplus()
 
@@ -94,20 +96,21 @@ class BetaNN(nn.Module):
 
 class NIGNN(nn.Module):
     """
-    Simple neural network for predicting the parameters of a normal inverse gamma distribution.
+    Simple neural network for predicting the parameters of a (uni-or multivariate)
+    normal inverse gamma distribution.
     """
 
-    def __init__(self, n_hidden: int = 10, use_softplus: bool = True):
+    def __init__(self, hidden_dim: int = 10, use_softplus: bool = True, output_dim: int = 1,):
         super().__init__()
-        self.hidden_dims = n_hidden
-        self.fc_1 = nn.Linear(1, n_hidden)
-        self.fc_2 = nn.Linear(n_hidden, n_hidden)
+        self.hidden_dim = hidden_dim
+        self.fc_1 = nn.Linear(1, hidden_dim)
+        self.fc_2 = nn.Linear(hidden_dim, hidden_dim)
 
         # parameters of the normal inverse gamma distribution
-        self.fc_gamma = nn.Linear(n_hidden, 1)
-        self.fc_nu = nn.Linear(n_hidden, 1)
-        self.fc_alpha = nn.Linear(n_hidden, 1)
-        self.fc_beta = nn.Linear(n_hidden, 1)
+        self.fc_gamma = nn.Linear(hidden_dim, 1)
+        self.fc_nu = nn.Linear(hidden_dim, 1)
+        self.fc_alpha = nn.Linear(hidden_dim, 1)
+        self.fc_beta = nn.Linear(hidden_dim, 1)
 
         self.use_softplus = use_softplus
         self.softplus = nn.Softplus()
@@ -126,12 +129,16 @@ class NIGNN(nn.Module):
         beta = self.softplus(self.fc_beta(x))
 
         return gamma, nu, alpha, beta
-    
+
+def create_model(config):
+    """
+    Create a model from a configuration dictionary.
+    """
+    model = config["model"](**config["kwargs"])
+    return model
+
+
 if __name__ == "__main__":
-    
-    
-    x = np.random.uniform(0, 1, 100)
-    x = torch.from_numpy(x).view(-1,1).float()
-    model = PredictorModel()
-    out_probs = model(x)
-    print(out_probs.shape)
+    from epuc.configs import model_config
+    model = create_model(model_config["Normal"])
+    print(model)

@@ -1,0 +1,1 @@
+from epuc.helpers.train import train_model
