@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 from torch.utils.data import Dataset, DataLoader
-from epuc.model import PredictorModel, RegressorModel, BetaNN, NIGNN
+from epuc.model import PredictorModel, RegressorModel, BetaNN, NIGNN, create_model
 
 
 # TODO: generalize functions for different models, losses, datasets, etc.
@@ -43,20 +43,21 @@ def train_model(
     """
 
     model.train()
+    optimizer = optim(model.parameters(), **kwargs)
     if return_loss:
         loss_list = []
     for epoch in range(n_epochs):
         loss_epoch = 0.0
         for x, y in dataloader:
-            optim.zero_grad()
+            optimizer.zero_grad()
             x = x.view(-1, 1)
             y = y.view(-1, 1).float()  # use float for BCE loss
             pred = model(x)
-            loss = criterion(pred, y, **kwargs)
+            loss = criterion(pred, y)
             if return_loss:
                 loss_epoch += loss.item()
             loss.backward()
-            optim.step()
+            optimizer.step()
         if return_loss:
             loss_list.append(loss_epoch / len(dataloader))
 

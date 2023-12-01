@@ -58,14 +58,14 @@ class BernoulliSineDatasetsplitted(Dataset):
 
 class SineRegressionDataset(Dataset):
 
-    def __init__(self, n_samples: int, sine_factor: int = 5, x_max: float = 1.0,
-                 n_samples_2: int = 0, eps_var: float = 0.) -> None:
+    def __init__(self, n_samples_1: int, sine_factor: int = 5, x_max: float = 1.0,
+                 n_samples_2: int = 0, eps_var: float = 0.01) -> None:
         super().__init__()
-        self.n_samples = n_samples
+        self.n_samples = n_samples_1 + n_samples_2
         self.sine_factor = sine_factor
-        self.x_inst_in = torch.from_numpy(np.random.uniform(0,x_max, n_samples)).float()
+        self.x_inst_in = torch.from_numpy(np.random.uniform(0,x_max, n_samples_1)).float()
         self.x_inst_out = torch.from_numpy(np.random.uniform(x_max, 1, n_samples_2)).float()
-        eps = torch.normal(torch.zeros(n_samples + n_samples_2), eps_var)
+        eps = torch.normal(torch.zeros(n_samples_1 + n_samples_2), eps_var)
         if n_samples_2 > 0:
             self.x_inst = torch.cat((self.x_inst_in, self.x_inst_out), dim=0)
         else:
@@ -80,26 +80,4 @@ class SineRegressionDataset(Dataset):
         
         return self.x_inst[index], self.y_targets[index]
 
-
-if __name__ == "__main__":
-    fct_preds = sine_fct_prediction
-
-    x_inst = np.random.uniform(0,1,500)
-    preds = sine_fct_prediction(x_inst)
-    print(preds)
-    labels, preds = generate_bernoulli_labels(x_inst, fct_preds)
-    print(labels)
-
-    import matplotlib.pyplot as plt
-    print(x_inst.shape)
-    print(labels.shape)
-    fig, ax = plt.subplots()
-    ax.scatter(x_inst, labels)
-    ax.scatter(x_inst, preds)
-    plt.show()
-
-    dataset = BernoulliSineDatasetsplitted(100, 10)
-    print(len(dataset))
-    print(len(dataset.x))
-    print(len(dataset.y_labels))
-    print(len(dataset.preds))
+        

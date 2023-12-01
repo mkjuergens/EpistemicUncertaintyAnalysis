@@ -66,7 +66,7 @@ class inner_loss_der(torch.nn.Module):
     """
 
     def __init__(
-        self, lambda_reg: float, reg_type: str = "kl", epsilon: float = 0.0001
+        self, lambda_reg: float, reg_type: str = "evidence", epsilon: float = 0.0001
     ):
         """
         Parameters
