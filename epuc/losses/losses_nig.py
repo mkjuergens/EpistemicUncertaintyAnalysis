@@ -1,13 +1,18 @@
 import torch
 import numpy as np
 
-from epuc.distances import sum_kl_divergence_nig
+from epuc.regularization import (
+    sum_kl_divergence_nig,
+    entropy_regularizer_nig,
+    evidence_regulizer_nig,
+)
 
 
 class NegativeLogLikelihoodLoss(torch.nn.Module):
     """
     negative log likelihood loss for the Gaussian distribution.
     """
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -26,7 +31,10 @@ class outer_loss_der(torch.nn.Module):
     """
     outer expectation minimisation for the NIG-prior case.
     """
-    def __init__(self, lambda_reg: float, reg_type: str = "evidence", epsilon: float = 0.0001):
+
+    def __init__(
+        self, lambda_reg: float, reg_type: str = "evidence", epsilon: float = 0.0001
+    ):
         """
         Parameters
         ----------
@@ -47,7 +55,7 @@ class outer_loss_der(torch.nn.Module):
             if self.reg_type == "kl":
                 reg = sum_kl_divergence_nig(params_nig, epsilon=self.epsilon)
             elif self.reg_type == "evidence":
-                reg = evidence_regulizer(params_nig, y)
+                reg = evidence_regulizer_nig(params_nig, y)
             else:
                 raise NotImplementedError
         else:
@@ -61,7 +69,7 @@ class outer_loss_der(torch.nn.Module):
 class inner_loss_der(torch.nn.Module):
     """
     inner expectation minimization for the NIG-prior case. It optiimzes the parameters
-    of the Normal-Inverse-Gamma distribution which yields estimates of the aleatoric and epsitemic
+    of the Normal-wInverse-Gamma distribution which yields estimates of the aleatoric and epsitemic
     uncertainty as well as predictions, as described in Amini et al.
     """
 
@@ -88,7 +96,7 @@ class inner_loss_der(torch.nn.Module):
             if self.reg_type == "kl":
                 reg = sum_kl_divergence_nig(params_nig, epsilon=self.epsilon)
             elif self.reg_type == "evidence":
-                reg = evidence_regulizer(params_nig, y)
+                reg = evidence_regulizer_nig(params_nig, y)
             else:
                 raise TypeError
         else:
@@ -159,28 +167,3 @@ def outer_nig_loss(params: list, y: torch.tensor):
     )
 
     return loss.sum()
-
-
-def evidence_regulizer(params, y):
-    """evindece bases regularization as proposed in Amini et al.
-
-    Parameters
-    ----------
-    params : list
-        parameters of the NIG distribution as predicted by the model.
-    y : torch.tensor
-        tensor of target valeus
-
-    Returns
-    -------
-    float
-        regularization loss
-    """
-
-    gamma, nu, alpha = params[:-1]
-
-    abs_dif = torch.abs(y - gamma)
-
-    reg = abs_dif * (2 * nu + alpha)
-
-    return reg.sum()

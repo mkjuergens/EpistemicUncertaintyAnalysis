@@ -8,7 +8,7 @@ class PredictorModel(nn.Module):
     """
 
     def __init__(self, hidden_dim: int = 10, output_dim: int = 1, use_relu: bool = False,
-                 use_softplus: bool = True, *args, **kwargs) -> None:
+                 use_softplus: bool = True) -> None:
         super().__init__()
         self.hidden_dim = hidden_dim
 

@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 from torch.utils.data import Dataset, DataLoader
-from epuc.model import PredictorModel, RegressorModel, BetaNN, NIGNN, create_model
+from epuc.models import PredictorModel, RegressorModel, BetaNN, NIGNN, create_model
 
 
 # TODO: generalize functions for different models, losses, datasets, etc.

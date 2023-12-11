@@ -1,6 +1,6 @@
 import torch
 
-from epuc.model import BetaNN, NIGNN, PredictorModel, RegressorModel
+from epuc.models import BetaNN, NIGNN, PredictorModel, RegressorModel
 from epuc.losses import *
 
 model_config = {
@@ -100,7 +100,7 @@ train_config = {
         "n_runs": 100,
     },
     "NIG_outer_reg": {
-        "loss": outer_loss_der(lambda_reg=0.1, reg_type="evidence"),
+        "loss": outer_loss_der(lambda_reg=0.5, reg_type="evidence"),
         "n_epochs": 1000,
         "optim": torch.optim.Adam,
         "optim_kwargs": {"lr": 0.001},
@@ -116,7 +116,7 @@ train_config = {
         "n_runs": 100,
     },
      "NIG_inner_reg": {
-        "loss": inner_loss_der(lambda_reg=0.1, reg_type="evidence"),
+        "loss": inner_loss_der(lambda_reg=0.5, reg_type="evidence"),
         "n_epochs": 1000,
         "optim": torch.optim.Adam,
         "optim_kwargs": {"lr": 0.001},
@@ -124,5 +124,25 @@ train_config = {
         "n_runs": 100,
 
      }
+}
+
+data_config = {
+    "BernoulliSine": {
+        "n_samples_1": 1000,
+        "n_samples_2": 10,
+        "x_min": 0.0,
+        "x_max": 1.0,
+        "x_split": 0.5,
+        "sine_factor": 5.0
+    },
+    "SineRegression": {
+        "n_samples_1": 1000,
+        "n_samples_2": 10,
+        "x_min": 0.0,
+        "x_max": 1.0,
+        "x_split": 0.5,
+        "sine_factor": 5.0
+    },
+    
 }
 

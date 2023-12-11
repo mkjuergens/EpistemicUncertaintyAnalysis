@@ -1,6 +1,6 @@
 import torch
 
-from epuc.distances import sum_kl_divergence_beta
+from epuc.regularization.distances import sum_kl_divergence_beta
 
 
 class outer_bce_loss(torch.nn.Module):
@@ -161,3 +161,4 @@ if __name__ == "__main__":
     print(loss_outer(params, y))
     print(inner_bce_loss_beta(params, y))
     print(outer_bce_loss_beta(params, y))
+
