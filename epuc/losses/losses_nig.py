@@ -41,7 +41,7 @@ class outer_loss_der(torch.nn.Module):
         lambda_reg : float
             weight coefficient for the regularization parameter
         reg_type : str, optional
-            type of regularization used, by default "evidence". other options are {"kl"}
+            type of regularization used, by default "evidence". other options are {"kl", "entropy"}
         epsilon : float, optional
             parameter adeed enabling computation of KL divergence, by default 0.0001
         """
@@ -56,6 +56,8 @@ class outer_loss_der(torch.nn.Module):
                 reg = sum_kl_divergence_nig(params_nig, epsilon=self.epsilon)
             elif self.reg_type == "evidence":
                 reg = evidence_regulizer_nig(params_nig, y)
+            elif self.reg_type == "entropy":
+                reg = entropy_regularizer_nig(params=params_nig)
             else:
                 raise NotImplementedError
         else:
@@ -82,7 +84,7 @@ class inner_loss_der(torch.nn.Module):
         lambda_reg : float
            weight factor of regulaization
         reg_type : string
-            type of regularization used. Must be in {"kl", "evidence"}
+            type of regularization used. Must be in {"kl", "evidence", "entropy"}
         epsilon : float, optional
             stability parameter, by default 0.0001
         """
@@ -97,6 +99,8 @@ class inner_loss_der(torch.nn.Module):
                 reg = sum_kl_divergence_nig(params_nig, epsilon=self.epsilon)
             elif self.reg_type == "evidence":
                 reg = evidence_regulizer_nig(params_nig, y)
+            elif self.reg_type == "entropy":
+                reg = evidence_regulizer_nig(params=params_nig)
             else:
                 raise TypeError
         else:
