@@ -31,15 +31,14 @@ class Ensemble:
         Parameters
         ----------
         dataset : torch.utils.data.Dataset
-            has to include the options n_samples_1, n_samples_2, x_max 
+            has to include the options n_samples_1, n_samples_2, x_max
         data_params : dict
             dictionary containing the parameters for the dataset
         train_params : dict
             dictionary containing the parameters for training
         """
         for model in self.models:
-            dataset_train = dataset(
-                **data_params)
+            dataset_train = dataset(**data_params)
             data_loader = torch.utils.data.DataLoader(
                 dataset_train, batch_size=train_params["batch_size"], shuffle=True
             )
@@ -67,15 +66,20 @@ class Ensemble:
         torch.Tensor
             tensor containing the ensemble predictions
         """
-        return torch.stack([model(x) for model in self.models])
+        preds = [model(x) for model in self.models]
+        if isinstance(preds[0], torch.Tensor):
+            preds_out = torch.stack(preds)
+        elif isinstance(preds[0], (list, tuple)):
+            preds_out = torch.zeros(x.shape[0], len(preds), len(preds[0]))
+            for pred in range(len(preds[0])):
+                preds_out[:, :, pred] = torch.stack(
+                    [preds[i][pred] for i in range(len(preds))]
+                ).view(x.shape[0], len(preds))
+        else:
+            raise TypeError("unsupported prediction type {}".format(type(preds[0])))
+        return preds_out
 
-if __name__ == "__main__":
-    from epuc.configs import model_config, train_config, data_config
-    ensemble = Ensemble(model_config["Normal"], ensemble_size=10)
-    ensemble.train(
-        dataset=SineRegressionDataset,
-        data_params=data_config["SineRegression"],
-        train_params=train_config["Normal"],
-    )
-
-    print(ensemble.models[0].fc1.weight)
+    def predict_mean(self, x):
+        preds = self.predict(x)
+        # predict mean over ensemble members
+        return preds.mean(dim=1)

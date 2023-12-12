@@ -112,13 +112,13 @@ class SineRegressionDataset(Dataset):
         self.split = x_split
         # instances within range of first interval
         self.x_inst_in = torch.from_numpy(
-            np.random.uniform(x_min, x_max, n_samples_1)
+            np.random.uniform(x_min, x_split, n_samples_1)
         ).float()
         # add small noise to the data (homoscedastic)
         eps = torch.normal(torch.zeros(n_samples_1 + n_samples_2), eps_std)
         if n_samples_2 > 0:
             self.x_inst_out = torch.from_numpy(
-            np.random.uniform(x_max, 1, n_samples_2)
+            np.random.uniform(x_split, x_max, n_samples_2)
             ).float()
             self.x_inst = torch.cat((self.x_inst_in, self.x_inst_out), dim=0)
         else:

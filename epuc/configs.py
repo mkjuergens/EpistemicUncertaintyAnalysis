@@ -141,7 +141,8 @@ data_config = {
         "x_min": 0.0,
         "x_max": 1.0,
         "x_split": 0.5,
-        "sine_factor": 5.0
+        "sine_factor": 5.0,
+        "eps_std": 0.03
     },
     
 }
