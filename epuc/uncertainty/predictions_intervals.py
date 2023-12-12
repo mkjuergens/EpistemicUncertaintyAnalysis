@@ -43,18 +43,20 @@ def get_upper_lower_bounds(p: float, mu: np.ndarray, sigma: np.ndarray):
     """
 
     quantiles = normal_quantile(p=p, mu=mu, sigma=sigma)
-    lower_bound = mu - np.abs(quantiles)
-    upper_bound = mu + np.abs(quantiles)
+    lower_bound = 2 * mu - quantiles
+    upper_bound = quantiles
 
     return lower_bound, upper_bound
 
 
 if __name__ == "__main__":
     p = 0.975
-    mu = np.array([0, 0.5, 1.0])
-    sigma = np.array([2.0,2.0,2.0])
+    mu = np.array([0, 0.5, .5])
+    sigma = np.array([2.0,2.0,3.0])
     quantile = normal_quantile(p=p, mu=mu, sigma=sigma)
     print(quantile)
+    lower, upper = get_upper_lower_bounds(0.975, 6, 2)
+    print(lower, upper)
 
 
 
