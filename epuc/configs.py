@@ -53,11 +53,11 @@ train_config = {
     },
     "Normal": {
         "loss": NegativeLogLikelihoodLoss(),
-        "n_epochs": 1000,
+        "n_epochs": 500,
         "optim": torch.optim.Adam,
-        "optim_kwargs": {"lr": 0.001},
-        "batch_size": 128,
-        "n_runs": 100,
+        "optim_kwargs": {"lr": 0.0005},
+        "batch_size": 64,
+        "n_runs": 10,
     },
     "Beta_outer": {
         "loss": outer_bce_loss(lambda_reg=0.0),
@@ -95,15 +95,15 @@ train_config = {
         "loss": outer_loss_der(lambda_reg=0.0),
         "n_epochs": 1000,
         "optim": torch.optim.Adam,
-        "optim_kwargs": {"lr": 0.001},
+        "optim_kwargs": {"lr": 0.0005},
         "batch_size": 128,
         "n_runs": 100,
     },
     "NIG_outer_reg": {
-        "loss": outer_loss_der(lambda_reg=0.5, reg_type="evidence"),
+        "loss": outer_loss_der(lambda_reg=0.1, reg_type="evidence"),
         "n_epochs": 1000,
         "optim": torch.optim.Adam,
-        "optim_kwargs": {"lr": 0.001},
+        "optim_kwargs": {"lr": 0.0005},
         "batch_size": 128,
         "n_runs": 100,
     },
@@ -111,12 +111,12 @@ train_config = {
         "loss": inner_loss_der(lambda_reg=0.0),
         "n_epochs": 1000,
         "optim": torch.optim.Adam,
-        "optim_kwargs": {"lr": 0.001},
+        "optim_kwargs": {"lr": 0.0005},
         "batch_size": 128,
         "n_runs": 100,
     },
      "NIG_inner_reg": {
-        "loss": inner_loss_der(lambda_reg=0.5, reg_type="evidence"),
+        "loss": inner_loss_der(lambda_reg=0.1, reg_type="evidence"),
         "n_epochs": 1000,
         "optim": torch.optim.Adam,
         "optim_kwargs": {"lr": 0.001},
@@ -128,7 +128,7 @@ train_config = {
 
 data_config = {
     "BernoulliSine": {
-        "n_samples_1": 1000,
+        "n_samples_1": 5000,
         "n_samples_2": 10,
         "x_min": 0.0,
         "x_max": 1.0,
