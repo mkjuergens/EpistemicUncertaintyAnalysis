@@ -9,6 +9,10 @@ def sine_fct_prediction(x, freq: float = 10.0):
     pred_fct = lambda x: 0.5 * np.sin(freq * x) + 0.5
     return pred_fct(x)
 
+def polynomial_fct(x, degree: int = 4):
+    pred_fct = lambda x: x**degree
+    return pred_fct(x)
+
 
 def generate_bernoulli_labels(x_inst: np.ndarray, fct_pred):
     preds = fct_pred(x_inst)
@@ -133,6 +137,36 @@ class SineRegressionDataset(Dataset):
         return self.x_inst[index], self.y_targets[index]
 
 
+class PolynomialDataset(Dataset):
+
+    def __init__(self, n_samples: int, degree: int = 3, x_min: int = -4,
+        x_max: int = 4, eps_std: float = 3.0):
+
+        super().__init__()
+        self.n_samples = n_samples
+        self.degree = degree
+        self.x_min = x_min
+        self.x_max = x_max
+        self.eps_std = eps_std
+
+        self.x_inst = torch.from_numpy(np.random.uniform(x_min, x_max, n_samples)).float()
+        self.y_targets = polynomial_fct(self.x_inst, degree=self.degree).float()
+        eps = torch.normal(torch.zeros(n_samples), eps_std)
+        self.y_targets += eps
+
+    def __len__(self):
+        return self.n_samples
+
+    def __getitem__(self, index):
+        return self.x_inst[index], self.y_targets[index]
+
+
+
+
+
 if __name__ == "__main__":
-    data_params = data_config["SineRegression"]
-    dataset = SineRegressionDataset(**data_params)
+    data_params = data_config["PolynomialRegression"]
+    dataset = PolynomialDataset(**data_params)
+    print(dataset.x_inst.shape)
+    print(dataset.y_targets.shape)
+
