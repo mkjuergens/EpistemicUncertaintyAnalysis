@@ -86,6 +86,11 @@ class Ensemble:
         # predict mean over ensemble members
         return preds.mean(dim=1)
 
+    def predict_std(self, x):
+        preds = self.predict(x)
+        # predict mean over ensemble members
+        return preds.std(dim=1)
+
 
 class GaussianEnsemble(Ensemble):
     """Ensmeble of models which predict a Gaussian distribution. The mean and variance of the ensemble
@@ -103,7 +108,7 @@ class GaussianEnsemble(Ensemble):
         """
         super().__init__(model_config, ensemble_size)
 
-    def predict_mean_var(self, x):
+    def predict_mean_params(self, x):
         """
         Parameters
         ----------
@@ -117,13 +122,22 @@ class GaussianEnsemble(Ensemble):
         """
 
         preds = self.predict(x)  # of shape (n_instances, n_ensemble, 2)
-        pred_mean = preds[:, :, 0].mean(dim=1)
+        mean_mu = preds[:, :, 0].mean(dim=1)
         # use formula for variance of gauusian mixture model
-        preds_var = (preds[:, :, 1] ** 2 + preds[:, :, 0] ** 2).mean(
-            dim=1
-        ) - pred_mean**2
-        preds_std = torch.sqrt(preds_var)
-        return pred_mean, preds_std
+       # mean_var = (preds[:, :, 1] ** 2 + preds[:, :, 0] ** 2).mean(
+        #    dim=1
+       # ) - pred_mean**2
+        mean_std = preds[:, :, 1].mean(dim=1)
+        #preds_std = torch.sqrt(preds_var)
+        return mean_mu, mean_std
+
+    def predict_std_params(self, x):
+
+        preds = self.predict(x)
+        std_mu = preds[:, :, 0].std(dim=1)
+        std_std = preds[:, :, 1].std(dim=1)
+
+        return std_mu, std_std
     
 
 class NIGEnsemble(Ensemble):
@@ -160,7 +174,9 @@ class NIGEnsemble(Ensemble):
 
         preds = self.predict_mean(x)
         gamma, nu, alpha, beta = preds[:, 0], preds[:, 1], preds[:, 2], preds[:, 3]
+        # epistemic uncertainty: Var[mu]
         ep_uc = beta / (nu * (alpha - 1))
+        # aleatoric uncertainty: E[sigma^2] 
         al_uc = ep_uc * nu
 
         return ep_uc, al_uc
