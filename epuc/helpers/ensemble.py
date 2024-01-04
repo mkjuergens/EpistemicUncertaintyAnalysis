@@ -1,3 +1,5 @@
+from typing import Optional
+
 import torch
 from tqdm import tqdm
 from epuc.helpers.train import train_model
@@ -22,12 +24,7 @@ class Ensemble:
         self.models = [create_model(model_config) for _ in range(ensemble_size)]
         self.losses = []
 
-    def train(
-        self,
-        dataset,
-        data_params,
-        train_params: dict,
-    ):
+    def train(self, dataset, data_params, train_params: dict):
         """train an ensemble of models based on the same (resampled) dataset.
 
         Parameters
@@ -124,25 +121,23 @@ class GaussianEnsemble(Ensemble):
         preds = self.predict(x)  # of shape (n_instances, n_ensemble, 2)
         mean_mu = preds[:, :, 0].mean(dim=1)
         # use formula for variance of gauusian mixture model
-       # mean_var = (preds[:, :, 1] ** 2 + preds[:, :, 0] ** 2).mean(
+        # mean_var = (preds[:, :, 1] ** 2 + preds[:, :, 0] ** 2).mean(
         #    dim=1
-       # ) - pred_mean**2
+        # ) - pred_mean**2
         mean_std = preds[:, :, 1].mean(dim=1)
-        #preds_std = torch.sqrt(preds_var)
+        # preds_std = torch.sqrt(preds_var)
         return mean_mu, mean_std
 
     def predict_std_params(self, x):
-
         preds = self.predict(x)
         std_mu = preds[:, :, 0].std(dim=1)
         std_std = preds[:, :, 1].std(dim=1)
 
         return std_mu, std_std
-    
+
 
 class NIGEnsemble(Ensemble):
-    """Ensemble of models predicting the parameters of a Normal-Inverse-Gamma distribution.
-    """
+    """Ensemble of models predicting the parameters of a Normal-Inverse-Gamma distribution."""
 
     def __init__(self, model_config: dict, ensemble_size: int):
         super().__init__(model_config, ensemble_size)
@@ -161,7 +156,7 @@ class NIGEnsemble(Ensemble):
         mu, sigma
             mean and variance of the predicted normal distribution
         """
-        
+
         # predict mean over ensemble members
         preds = self.predict_mean(x)
         gamma, nu, alpha, beta = preds[:, 0], preds[:, 1], preds[:, 2], preds[:, 3]
@@ -169,18 +164,16 @@ class NIGEnsemble(Ensemble):
         sigma = torch.sqrt(beta / (alpha - 1))
 
         return mu, sigma
-    
-    def predict_uc(self, x):
 
+    def predict_uc(self, x):
         preds = self.predict_mean(x)
         gamma, nu, alpha, beta = preds[:, 0], preds[:, 1], preds[:, 2], preds[:, 3]
         # epistemic uncertainty: Var[mu]
         ep_uc = beta / (nu * (alpha - 1))
-        # aleatoric uncertainty: E[sigma^2] 
+        # aleatoric uncertainty: E[sigma^2]
         al_uc = ep_uc * nu
 
         return ep_uc, al_uc
-
 
 
 if __name__ == "__main__":
