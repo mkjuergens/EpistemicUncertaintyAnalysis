@@ -73,23 +73,22 @@ class BetaNN(nn.Module):
     """
 
     def __init__(
-        self, hidden_dim: int = 10, use_softplus: bool = True, output_dim: int = 1
+        self, hidden_dim: int = 10, use_softplus: bool = True, n_hidden_layers: int = 1,
+         output_dim: int = 1
     ):
-        super().__init__()
-        self.fc1 = nn.Linear(1, hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        super().__init__() 
+        self.layers = [nn.Linear(1, hidden_dim), nn.Softplus() if use_softplus else nn.ReLU()]
+        for _ in range(n_hidden_layers - 1):
+            self.layers.append(nn.Linear(hidden_dim, hidden_dim))
+            self.layers.append(nn.Softplus() if use_softplus else nn.ReLU())
+
         self.fc_alpha = nn.Linear(hidden_dim, output_dim)
         self.fc_beta = nn.Linear(hidden_dim, output_dim)
-        self.use_softplus = use_softplus
-        self.softplus = nn.Softplus()
+        
+        self.model = nn.Sequential(*self.layers)
 
     def forward(self, x):
-        if self.use_softplus:
-            x = self.softplus(self.fc1(x))
-            x = self.softplus(self.fc2(x))
-        else:
-            x = self.fc1(x)
-            x = self.fc2(x)
+        x = self.model(x)
 
         alpha = torch.exp(self.fc_alpha(x))
         beta = torch.exp(self.fc_beta(x))
@@ -107,33 +106,30 @@ class NIGNN(nn.Module):
         self,
         hidden_dim: int = 10,
         use_softplus: bool = True,
+        n_hidden_layers: int = 1,
         output_dim: int = 1,
     ):
         super().__init__()
-        self.hidden_dim = hidden_dim
-        self.fc_1 = nn.Linear(1, hidden_dim)
-        self.fc_2 = nn.Linear(hidden_dim, hidden_dim)
+        self.layers = [nn.Linear(1, hidden_dim), nn.Softplus() if use_softplus else nn.ReLU()]
+        for _ in range(n_hidden_layers - 1):
+            self.layers.append(nn.Linear(hidden_dim, hidden_dim))
+            self.layers.append(nn.Softplus() if use_softplus else nn.ReLU())
 
         # parameters of the normal inverse gamma distribution
-        self.fc_gamma = nn.Linear(hidden_dim, 1)
-        self.fc_nu = nn.Linear(hidden_dim, 1)
-        self.fc_alpha = nn.Linear(hidden_dim, 1)
-        self.fc_beta = nn.Linear(hidden_dim, 1)
+        self.fc_gamma = nn.Linear(hidden_dim, output_dim)
+        self.fc_nu = nn.Linear(hidden_dim, output_dim)
+        self.fc_alpha = nn.Linear(hidden_dim, output_dim)
+        self.fc_beta = nn.Linear(hidden_dim, output_dim)
 
-        self.use_softplus = use_softplus
-        self.softplus = nn.Softplus()
+        self.model = nn.Sequential(*self.layers)
 
     def forward(self, x):
-        if self.use_softplus:
-            x = self.softplus(self.fc_1(x))
-            x = self.softplus(self.fc_2(x))
-        else:
-            x = self.fc_1(x)
-            x = self.fc_2(x)
+        
+        x = self.model(x)
 
         gamma = self.fc_gamma(x)
         nu = self.softplus(self.fc_nu(x))
-        alpha = self.softplus(self.fc_alpha(x)) + 1
+        alpha = self.softplus(self.fc_alpha(x)) + 1 # ensure alpha > 1
         beta = self.softplus(self.fc_beta(x))
 
         return gamma, nu, alpha, beta
