@@ -157,7 +157,7 @@ def sum_kl_divergence_beta(beta_params: list):
     return expected_kl_div
 
 
-def sum_kl_divergence_nig(params_nig: list, epsilon: float = 0.0001):
+def reg_kl_div_nig(params_nig: list, epsilon: float = 0.0001):
     nu, alpha = params_nig[1], params_nig[2]
     assert (
         nu.shape == alpha.shape
@@ -166,9 +166,8 @@ def sum_kl_divergence_nig(params_nig: list, epsilon: float = 0.0001):
     kl_div = kl_divergergence_nig_torch(
         nu.squeeze(), alpha.squeeze(), epsilon=epsilon
     )  # tensor with value per instance
-    sum_kl_div = torch.sum(kl_div)
 
-    return sum_kl_div
+    return kl_div
 
 
 if __name__ == "__main__":
@@ -188,4 +187,4 @@ if __name__ == "__main__":
     print(kl_divergence_dirichlet_torch(alpha_2, alpha_1))
     print(kl_divergergence_nig_torch(nu, alpha))
     print(torch.sum(kl_divergergence_nig_torch(nu, alpha)))
-    print(sum_kl_divergence_nig(params))
+    print(reg_kl_div_nig(params))

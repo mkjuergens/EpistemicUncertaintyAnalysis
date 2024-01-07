@@ -2,8 +2,8 @@ import torch
 import numpy as np
 
 from epuc.regularization import (
-    sum_kl_divergence_nig,
-    entropy_regularizer_nig,
+    reg_kl_div_nig,
+    entropy_NIG,
     evidence_regulizer_nig,
 )
 
@@ -53,19 +53,20 @@ class outer_loss_der(torch.nn.Module):
     def forward(self, params_nig: list, y: torch.tensor):
         if self.lambda_reg > 0.0:
             if self.reg_type == "kl":
-                reg = sum_kl_divergence_nig(params_nig, epsilon=self.epsilon)
+                reg = reg_kl_div_nig(params_nig, epsilon=self.epsilon)
             elif self.reg_type == "evidence":
                 reg = evidence_regulizer_nig(params_nig, y)
             elif self.reg_type == "entropy":
-                reg = entropy_regularizer_nig(params=params_nig)
+                reg = entropy_NIG(params=params_nig)
             else:
                 raise NotImplementedError
         else:
             reg = 0.0
 
         outer_loss = outer_nig_loss(params_nig, y)
+        loss = outer_loss + self.lambda_reg * reg
 
-        return outer_loss + self.lambda_reg * reg
+        return loss.mean()
 
 
 class inner_loss_der(torch.nn.Module):
@@ -96,19 +97,20 @@ class inner_loss_der(torch.nn.Module):
     def forward(self, params_nig: list, y: torch.tensor):
         if self.lambda_reg > 0.0:
             if self.reg_type == "kl":
-                reg = sum_kl_divergence_nig(params_nig, epsilon=self.epsilon)
+                reg = reg_kl_div_nig(params_nig, epsilon=self.epsilon)
             elif self.reg_type == "evidence":
                 reg = evidence_regulizer_nig(params_nig, y)
             elif self.reg_type == "entropy":
-                reg = evidence_regulizer_nig(params=params_nig)
+                reg = entropy_NIG(params=params_nig)
             else:
                 raise TypeError
         else:
             reg = 0.0
 
         inner_loss = inner_nig_loss(params_nig, y)
+        loss = inner_loss + self.lambda_reg * reg
 
-        return inner_loss + self.lambda_reg * reg
+        return loss.mean()
 
 
 def inner_nig_loss(params: list, y: torch.tensor):
@@ -140,7 +142,7 @@ def inner_nig_loss(params: list, y: torch.tensor):
     # now put it all together
     log_loss = 0.5 * log_1 - alpha * log_2 + (alpha + 0.5) * log_3 + log_4
 
-    return log_loss.sum()
+    return log_loss
 
 
 def outer_nig_loss(params: list, y: torch.tensor):
@@ -170,4 +172,4 @@ def outer_nig_loss(params: list, y: torch.tensor):
         - torch.log(torch.ones(len(alpha)) * np.pi)
     )
 
-    return loss.sum()
+    return loss

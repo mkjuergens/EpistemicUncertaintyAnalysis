@@ -80,7 +80,7 @@ class Ensemble:
 
     def predict_mean(self, x):
         preds = self.predict(x)
-        # predict mean over ensemble members
+        # predict mean over ensemble members (axis 1)
         return preds.mean(dim=1)
 
     def predict_std(self, x):
@@ -90,8 +90,8 @@ class Ensemble:
 
 
 class GaussianEnsemble(Ensemble):
-    """Ensmeble of models which predict a Gaussian distribution. The mean and variance of the ensemble
-    are computed based on assuming a Gaussian Mixture model.
+    """Ensmeble of models which predict a Gaussian distribution, that is, the mean and standard 
+    deviation for each instance assuming the target values follow a Gaussian distribution.
     """
 
     def __init__(self, model_config: dict, ensemble_size: int):
@@ -143,8 +143,11 @@ class NIGEnsemble(Ensemble):
         super().__init__(model_config, ensemble_size)
 
     def predict_normal_params(self, x):
-        """predict parameters of a normal distribution based on the ensemble predictions.
-        Here, we take the mean of the ensemble predictions as the mean of the NIG parameters
+        """predict the mean of mu and sigma^2 (of the modeled normal distribution)
+        as well as their respective variance.
+        Here, we take the mean of the ensemble predictions as the mean of the NIG parameters.
+
+        The formulas for the mean and varaince of the NIG distribution are used.
 
         Parameters
         ----------
@@ -153,17 +156,18 @@ class NIGEnsemble(Ensemble):
 
         Returns
         -------
-        mu, sigma
-            mean and variance of the predicted normal distribution
+        mean_mu, mean_sigma2, var_mu, var_sigma2
         """
 
         # predict mean over ensemble members
         preds = self.predict_mean(x)
         gamma, nu, alpha, beta = preds[:, 0], preds[:, 1], preds[:, 2], preds[:, 3]
-        mu = gamma
-        sigma = torch.sqrt(beta / (alpha - 1))
+        mean_mu = gamma
+        var_mu = beta/(nu*(alpha -1))
+        mean_sigma2 = beta / (alpha - 1)
+        var_sigma2 = beta**2/((alpha -1)**2*(alpha -2))
 
-        return mu, sigma
+        return mean_mu, var_mu, mean_sigma2, var_sigma2
 
     def predict_uc(self, x):
         preds = self.predict_mean(x)

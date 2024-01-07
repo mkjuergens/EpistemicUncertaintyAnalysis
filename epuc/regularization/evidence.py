@@ -23,4 +23,4 @@ def evidence_regulizer_nig(params, y):
 
     reg = abs_dif * (2 * nu + alpha)
 
-    return reg.sum()
+    return reg
