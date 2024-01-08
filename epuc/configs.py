@@ -85,7 +85,7 @@ model_config = {
 }
 
 data_config = {
-    "calssification": {
+    "classification": {
         "n_samples_1": 5000,
         "n_samples_2": 10,
         "x_min": 0.0,
@@ -114,7 +114,8 @@ data_config = {
 
 def create_train_config_regression(lambda_reg: float = 0.1, n_epochs: int = 1000, 
                                     batch_size: int = 128, lr: float = 0.001,
-                                    reg_type: str = "evidence", ensemble_size: int = 100):
+                                    reg_type: str = "evidence", ensemble_size: int = 100,
+                                    ensemble_size_second: int = 1):
     """
     creates the cinfiguration for all models trained for the regression experiments
     """
@@ -135,6 +136,7 @@ def create_train_config_regression(lambda_reg: float = 0.1, n_epochs: int = 1000
         "optim": torch.optim.Adam,
         "optim_kwargs": {"lr": lr},
         "batch_size": batch_size,
+        "ensemble_size": ensemble_size_second
     },
     "NIG_outer_reg": {
         "model": NIGNN,
@@ -143,6 +145,7 @@ def create_train_config_regression(lambda_reg: float = 0.1, n_epochs: int = 1000
         "optim": torch.optim.Adam,
         "optim_kwargs": {"lr": lr},
         "batch_size": batch_size,
+        "ensemble_size": ensemble_size_second
     },
     "NIG_inner": {
         "model": NIGNN,
@@ -151,6 +154,7 @@ def create_train_config_regression(lambda_reg: float = 0.1, n_epochs: int = 1000
         "optim": torch.optim.Adam,
         "optim_kwargs": {"lr": lr},
         "batch_size": batch_size,
+        "ensemble_size": ensemble_size_second
     },
     "NIG_inner_reg": {
         "model": NIGNN,
@@ -159,6 +163,7 @@ def create_train_config_regression(lambda_reg: float = 0.1, n_epochs: int = 1000
         "optim": torch.optim.Adam,
         "optim_kwargs": {"lr": lr},
         "batch_size": batch_size,
+        "ensemble_size": ensemble_size_second
 
             }
         }    

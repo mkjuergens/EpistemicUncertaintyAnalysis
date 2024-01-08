@@ -86,7 +86,7 @@ def _simulation_gamma_nig(
         else:
             ensemble = NIGEnsemble(
                 model_config=model_config["NormalInverseGamma"],
-                ensemble_size=temp_dict["ensemble_size"],
+                ensemble_size=train_config[ens_type]["ensemble_size"],
             )
 
         ensemble.train(
@@ -178,6 +178,6 @@ def _simulation_gamma_nig(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_dir", dest="config_dir", type=str, required=True)
-    parser.add_argument("--save_dir", dest="save_dir", type=str, default="results")
+    parser.add_argument("--save_dir", dest="save_dir", type=str)
     args = parser.parse_args()
     _simulation_gamma_nig(config_dir=args.config_dir)
