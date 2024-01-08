@@ -48,7 +48,7 @@ def create_data(type: str = "regression", n_eval_points: int = 1000):
     return dataset, x_eval, y_eval, x_train, y_targets
 
 
-def _simulation_gamma_nig(
+def _main_simulation(
     config_dir,
     type: str = "regression",
     exp_name: Optional[str] = None,
@@ -155,7 +155,7 @@ def _simulation_gamma_nig(
 
                 # confidence bounds
                 lower_p, upper_p = get_upper_lower_bounds_beta(
-                        p=0.975, alpha=mean_params[:, 0].detach().numpy(), beta=mean_params[:, 1].detach().numpy()
+                        p=0.975, alpha=mean_params[:, 0], beta=mean_params[:, 1]
                     )
                 results_per_ens_dict[ens_type]["lower_p"] = lower_p
                 results_per_ens_dict[ens_type]["upper_p"] = upper_p
@@ -253,4 +253,4 @@ if __name__ == "__main__":
     parser.add_argument("--save_dir", dest="save_dir", type=str, default="results")
     parser.add_argument("--type", dest="type", type=str, default="regression")
     args = parser.parse_args()
-    _simulation_gamma_nig(config_dir=args.config_dir, type=args.type, save_dir=args.save_dir)
+    _main_simulation(config_dir=args.config_dir, type=args.type, save_dir=args.save_dir)
