@@ -61,13 +61,13 @@ def plot_gaussian_nig_prediction_intervals(results_dict: dict, x_train: np.ndarr
             # plot predictions for sigma
             ax[i, 1].plot(
                 x_eval,
-                results_dict[ens_type]["pred_sigmas"],
+                results_dict[ens_type]["pred_sigmas2"],
                 alpha=0.1,
                 color="black",
             )
             ax[i, 1].plot(
                 x_eval,
-                results_dict[ens_type]["mean_sigmas"].detach().numpy(),
+                results_dict[ens_type]["mean_sigma2"].detach().numpy(),
                 label="mean prediction",
                 color="blue",
             )

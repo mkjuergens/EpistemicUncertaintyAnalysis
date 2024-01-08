@@ -80,7 +80,7 @@ def _simulation_gamma_nig(
         if ens_type == "Normal":
             ensemble = GaussianEnsemble(
                 model_config=model_config["Normal"],
-                ensemble_size=temp_dict["ensemble_size"],
+                ensemble_size=train_config[ens_type]["ensemble_size"],
             )
 
         else:
@@ -107,9 +107,11 @@ def _simulation_gamma_nig(
             std_params = ensemble.predict_std(x_eval.view(-1, 1))
 
             results_per_ens_dict[ens_type]["mean_mus"] = mean_params[:, 0]
-            results_per_ens_dict[ens_type]["mean_sigmas"] = mean_params[:, 1]
+            # take the square of the standard deviation to get the variance
+            results_per_ens_dict[ens_type]["mean_sigma2"] = np.mean((preds[:, :, 1] ** 2), axis=1)
+            # results_per_ens_dict[ens_type]["mean_sigmas"] = mean_params[:, 1]
             results_per_ens_dict[ens_type]["pred_mus"] = preds[:, :, 0]
-            results_per_ens_dict[ens_type]["pred_sigmas"] = preds[:, :, 1]
+            results_per_ens_dict[ens_type]["pred_sigmas2"] = preds[:, :, 1]**2
 
             # confidence bounds
             lower_mu, upper_mu = get_upper_lower_bounds_normal(
