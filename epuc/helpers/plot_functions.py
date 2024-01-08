@@ -5,16 +5,20 @@ import matplotlib.pyplot as plt
 
 
 def plot_gaussian_nig_prediction_intervals(results_dict: dict, x_train: np.ndarray, y_targets: np.ndarray,
-                                           x_eval: np.darray, y_eval: np.ndarray, title: str, figsize: tuple, 
+                                           x_eval: np.ndarray, y_eval: np.ndarray, figsize: tuple = (9, 21), 
                                            list_subtitles: Optional[list] = None):
     
     fig, ax = plt.subplots(len(results_dict), 2, figsize=figsize)
 
     for i, ens_type in enumerate(results_dict.keys()):
+        if not list_subtitles:
+            subtitle = f"{ens_type}"
+        else:
+            subtitle = list_subtitles[i]
         fig.text(
         0.5,
         ax[i, 0].get_position().bounds[1] + ax[i, 0].get_position().height + 0.01,
-        f"{ens_type}",
+        subtitle,
         ha="center",
         va="bottom",
         fontsize="large",
@@ -23,6 +27,7 @@ def plot_gaussian_nig_prediction_intervals(results_dict: dict, x_train: np.ndarr
         ax[i, 1].set_title("$\sigma$")
         ax[i, 0].plot()
         ax[i, 0].plot(x_eval, y_eval, label="ground truth", color="red")
+        
         if ens_type == "Normal":
             # plot predictions for mu ------------------------------------
             ax[i, 0].plot(

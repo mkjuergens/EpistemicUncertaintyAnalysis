@@ -85,7 +85,7 @@ model_config = {
 }
 
 data_config = {
-    "BernoulliSine": {
+    "calssification": {
         "n_samples_1": 5000,
         "n_samples_2": 10,
         "x_min": 0.0,
@@ -102,7 +102,7 @@ data_config = {
         "sine_factor": 5.0,
         "eps_std": 0.03
     },
-    "PolynomialRegression": {
+    "regression": {
         "n_samples": 1000,
         "x_min": -4,
         "x_max": 4,

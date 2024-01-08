@@ -24,6 +24,8 @@ from epuc.uncertainty import (
     get_upper_lower_bounds_inv_gamma,
 )
 
+from epuc.helpers.plot_functions import plot_gaussian_nig_prediction_intervals
+
 plt.style.use("seaborn-v0_8")
 
 
@@ -33,31 +35,45 @@ def _simulation_gamma_nig(
     dataset=PolynomialDataset,
     exp_name: Optional[str] = None,
 ):
+    """function for doing the primary-secondary distribution analysis, saving the results in a
+    dictionary and plotting it.
+
+    Parameters
+    ----------
+    config_dir : str
+        directory where
+    type : str, optional
+        type of the experiment, by default "regression"
+    dataset : _type_, optional
+        _description_, by default PolynomialDataset
+    exp_name : Optional[str], optional
+        _description_, by default None
+    """
     if not exp_name:
         exp_name = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-    dataset_eval = PolynomialDataset(
-        **data_config["PolynomialRegression"]
-    )  # TODO: generalize
+    dataset_eval = dataset(**data_config[type])  # TODO: generalize
 
     x_eval = torch.from_numpy(np.linspace(-6, 6, 100)).float()
     y_eval = polynomial_fct(x_eval, degree=3)
-    x_inst = dataset_eval.x_inst
+    x_train = dataset_eval.x_inst
     y_targets = dataset_eval.y_targets
 
-    if not os.path.exists("results/" + exp_name):
-        os.makedirs("results/" + exp_name)
+    save_path = "results/" + type + f"/{exp_name}"
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
 
     # load json file located in the config_dir directory into a dictionary
     with open(config_dir) as json_file:
         temp_dict = json.load(json_file)
 
-    with open("results/" + exp_name + "/sample.json", "w") as outfile:
+    with open(save_path + "/params.json", "w") as outfile:
         json.dump(temp_dict, outfile)
 
     train_config = create_train_config(type=type, **temp_dict)
 
     results_per_ens_dict = {}
+
     for ens_type in train_config.keys():
         results_per_ens_dict[ens_type] = {}
         if ens_type == "Normal":
@@ -74,7 +90,7 @@ def _simulation_gamma_nig(
 
         ensemble.train(
             dataset=PolynomialDataset,
-            data_params=data_config["PolynomialRegression"],
+            data_params=data_config[type],
             train_params=train_config[ens_type],
         )
 
@@ -142,8 +158,20 @@ def _simulation_gamma_nig(
             results_per_ens_dict[ens_type]["upper_sigma"] = upper_sigma2
 
     # save results in a pickle file
-    with open("results/" + exp_name + "/results_per_ens_dict.pkl", "wb") as f:
+    with open(save_path + "/results_per_ens_dict.pkl", "wb") as f:
         pickle.dump(results_per_ens_dict, f)
+
+    # plot results
+    fig, ax = plot_gaussian_nig_prediction_intervals(
+        results_dict=results_per_ens_dict,
+        x_train=x_train,
+        y_targets=y_targets,
+        x_eval=x_eval,
+        y_eval=y_eval,
+    )
+
+    # save plot in same folder
+    plt.savefig(save_path + "/fig_confidence_bounds.png")
 
 
 if __name__ == "__main__":
