@@ -151,7 +151,7 @@ def _main_simulation(
                 results_per_ens_dict[ens_type]["pred_alphas"] = preds[:, :, 0]
                 results_per_ens_dict[ens_type]["pred_betas"] = preds[:, :, 1]
 
-                results_per_ens_dict[ens_type]["mean_pred_p"] = ensemble.predict_mean_p(x_eval.view(-1, 1))
+                results_per_ens_dict[ens_type]["mean_pred_p"] = ensemble.predict_mean_p(x_eval.view(-1, 1)).detach().numpy()    
 
                 # confidence bounds
                 lower_p, upper_p = get_upper_lower_bounds_beta(

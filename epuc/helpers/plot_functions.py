@@ -194,7 +194,7 @@ def plot_bernoulli_beta_prediction_intervals(results_dict: dict,
             # plot predictions for mu ------------------------------------
             ax[i].plot(
                 x_eval,
-                results_dict[ens_type]["mean_probs"].detach().numpy(),
+                results_dict[ens_type]["mean_probs"],
                 label="mean prediction",
                 color="blue",
             )
@@ -215,7 +215,7 @@ def plot_bernoulli_beta_prediction_intervals(results_dict: dict,
             # plot predictions for mu ------------------------------------
             ax[i].plot(
                 x_eval,
-                results_dict[ens_type]["mean_pred_p"].detach().numpy(),
+                results_dict[ens_type]["mean_pred_p"],
                 label="mean prediction",
                 color="blue",
             )
