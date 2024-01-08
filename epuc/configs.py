@@ -68,7 +68,6 @@ model_config = {
             "hidden_dim": 50,
             "n_hidden_layers": 1,
             "output_dim": 1,
-            "use_relu": False,
             "use_softplus": True,
         },
     },
