@@ -68,7 +68,7 @@ class Ensemble:
         """
         preds = [model(x) for model in self.models]
         if isinstance(preds[0], torch.Tensor):
-            preds_out = torch.stack(preds)
+            preds_out = torch.stack(preds, axis=1)
         elif isinstance(preds[0], (list, tuple)):
             preds_out = torch.zeros(x.shape[0], len(preds), len(preds[0]))
             for pred in range(len(preds[0])):
@@ -180,6 +180,16 @@ class NIGEnsemble(Ensemble):
         return ep_uc, al_uc
     
 
+    
+class BetaEnsemble(Ensemble):
+
+    def __init__(self, model_config: dict, ensemble_size: int):
+        super().__init__(model_config, ensemble_size)
+
+    def predict_mean_p(self, x):
+        preds = self.predict(x)
+        pred_means = preds[:, :, 0]/(preds[:, :, 0] + preds[:, :, 1])
+        return pred_means.mean(axis=1)
 
 
 

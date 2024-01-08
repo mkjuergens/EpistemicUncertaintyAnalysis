@@ -156,3 +156,81 @@ def plot_gaussian_nig_prediction_intervals(
 
     fig.subplots_adjust(hspace=0.5)
     return fig, ax
+
+
+# TODO: def plot_bernoulli_beta_prediction_intervals()
+def plot_bernoulli_beta_prediction_intervals(results_dict: dict,
+    x_train: np.ndarray,
+    y_targets: np.ndarray,
+    x_eval: np.ndarray,
+    y_eval: np.ndarray,
+    figsize: tuple = (6, 21)):
+
+    fig, ax = plt.subplots(len(results_dict), 1, figsize=figsize)
+    for i, ens_type in enumerate(results_dict.keys()):
+        fig.text(
+            0.5,
+            ax[i].get_position().bounds[1] + ax[i].get_position().height + 0.01,
+            f"{ens_type}",
+            ha="center",
+            va="bottom",
+            fontsize="large",
+        )
+        ax[i].axvline(x_train.min(), linestyle="--", color="black")
+        ax[i].axvline(x_train.max(), linestyle="--", color="black")
+    
+        ax[i].plot(x_eval, y_targets, label=r"ground truth $\theta", color="red")
+        # plot training data
+        ax[i].scatter(
+                x_train,
+                y_eval,
+                label="training data",
+                marker="o",
+                s=20,
+                color="black",
+                alpha=0.1,
+            )
+        if ens_type == "Bernoulli":
+            # plot predictions for mu ------------------------------------
+            ax[i].plot(
+                x_eval,
+                results_dict[ens_type]["mean_probs"].detach().numpy(),
+                label="mean prediction",
+                color="blue",
+            )
+            ax[i].plot(
+                x_eval, results_dict[ens_type]["pred_probs"][:,:,0], alpha=0.1, color="black"
+            )
+            ax[i].fill_between(
+                x_eval,
+                results_dict[ens_type]["lower_p"],
+                results_dict[ens_type]["upper_p"],
+                alpha=0.5,
+                label="95% CI",
+                color="gray",
+            )
+            ax[i].legend()
+
+        else:
+            # plot predictions for mu ------------------------------------
+            ax[i].plot(
+                x_eval,
+                results_dict[ens_type]["mean_pred_p"].detach().numpy(),
+                label="mean prediction",
+                color="blue",
+            )
+            ax[i].fill_between(
+                x_eval,
+                results_dict[ens_type]["lower_p"],
+                results_dict[ens_type]["upper_p"],
+                alpha=0.5,
+                label="95% CI",
+                color="blue",
+            )
+            
+            ax[i].legend()
+
+    fig.subplots_adjust(hspace=0.5)
+    return fig, ax
+
+
