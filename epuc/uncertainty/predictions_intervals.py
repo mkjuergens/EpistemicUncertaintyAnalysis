@@ -1,4 +1,3 @@
-import torch
 import numpy as np
 from scipy import stats
 
@@ -94,6 +93,32 @@ def get_upper_lower_bounds_inv_gamma(p: float, alpha: np.ndarray, beta: np.ndarr
     # calculate quantiles 
     lower_bound = stats.invgamma.ppf(tail_prob, alpha, scale=beta)
     upper_bound = stats.invgamma.ppf(1 - tail_prob, alpha, scale=beta)
+
+    return lower_bound, upper_bound
+
+def get_upper_lower_bounds_beta(p: float, alpha: np.ndarray, beta: np.ndarray):
+    """calculate the upper and lower bounds of a prediction interval for a beta distribution
+
+    Parameters
+    ----------
+    p : float
+        confidence level, must be in [0,1]
+    alpha : np.ndarray of shape (n_instances, 1)
+        alpha parameter of the beta distribution
+    beta :  np.ndarray of shape (n_instances, 1)
+        beta parameter of the beta distribution
+
+    Returns
+    -------
+    lower_bound, upper_bound : np.ndarray, np.ndarray
+        confidence bounds per instance
+    """
+
+    tail_prob = (1 - p) / 2
+
+    # calculate quantiles
+    lower_bound = stats.beta.ppf(tail_prob, alpha, beta)
+    upper_bound = stats.beta.ppf(1 - tail_prob, alpha, beta)
 
     return lower_bound, upper_bound
 

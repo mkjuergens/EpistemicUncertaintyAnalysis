@@ -178,6 +178,9 @@ class NIGEnsemble(Ensemble):
         al_uc = ep_uc * nu
 
         return ep_uc, al_uc
+    
+
+
 
 
 if __name__ == "__main__":
