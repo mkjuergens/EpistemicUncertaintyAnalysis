@@ -4,7 +4,8 @@ from epuc.models import BetaNN, NIGNN, PredictorModel, RegressorModel
 from epuc.losses import *
 
 def create_train_config(type: str = "regression", lambda_reg: float = 0.1, n_epochs: int = 1000,
-                        batch_size: int = 128, lr: float = 0.001, reg_type: str = "evidence"):
+                        batch_size: int = 128, lr: float = 0.001, reg_type: str = "evidence",
+                        ensemble_size: int = 100):
     """creates the training configuration for the specific problem given the training parameters.
 
     Parameters
@@ -113,18 +114,22 @@ data_config = {
 
 def create_train_config_regression(lambda_reg: float = 0.1, n_epochs: int = 1000, 
                                     batch_size: int = 128, lr: float = 0.001,
-                                    reg_type: str = "evidence"):
-    """creates the cinfiguration for all models trained for the regression experiments
+                                    reg_type: str = "evidence", ensemble_size: int = 100):
+    """
+    creates the cinfiguration for all models trained for the regression experiments
     """
     train_config_regression = {
     "Normal": {
-        "loss": NegativeLogLikelihoodLoss,
+        "model": RegressorModel,
+        "loss": NegativeLogLikelihoodLoss(),
         "n_epochs": n_epochs,
         "optim": torch.optim.Adam,
         "optim_kwargs": {"lr": lr},
         "batch_size": batch_size,
+        "ensemble_size": ensemble_size,
     },
     "NIG_outer": {
+        "model": NIGNN,
         "loss": outer_loss_der(lambda_reg=0.0),
         "n_epochs": n_epochs,
         "optim": torch.optim.Adam,
@@ -132,6 +137,7 @@ def create_train_config_regression(lambda_reg: float = 0.1, n_epochs: int = 1000
         "batch_size": batch_size,
     },
     "NIG_outer_reg": {
+        "model": NIGNN,
         "loss": outer_loss_der(lambda_reg=0.1, reg_type=reg_type),
         "n_epochs": n_epochs,
         "optim": torch.optim.Adam,
@@ -139,6 +145,7 @@ def create_train_config_regression(lambda_reg: float = 0.1, n_epochs: int = 1000
         "batch_size": batch_size,
     },
     "NIG_inner": {
+        "model": NIGNN,
         "loss": inner_loss_der(lambda_reg=0.0),
         "n_epochs": n_epochs,
         "optim": torch.optim.Adam,
@@ -146,6 +153,7 @@ def create_train_config_regression(lambda_reg: float = 0.1, n_epochs: int = 1000
         "batch_size": batch_size,
     },
     "NIG_inner_reg": {
+        "model": NIGNN,
         "loss": inner_loss_der(lambda_reg=lambda_reg, reg_type=reg_type),
         "n_epochs": n_epochs,
         "optim": torch.optim.Adam,
@@ -158,7 +166,8 @@ def create_train_config_regression(lambda_reg: float = 0.1, n_epochs: int = 1000
                     
 
 def create_train_config_classification(lambda_reg: float = 0.1, n_epochs: int = 1000,
-                                       batch_size: int = 128, lr: float = 0.001):
+                                       batch_size: int = 128, lr: float = 0.001,
+                                       ensemble_size: int = 100):
     
     train_config_classification = {
     "Bernoulli": {
@@ -167,6 +176,7 @@ def create_train_config_classification(lambda_reg: float = 0.1, n_epochs: int = 
         "optim": torch.optim.Adam,
         "optim_kwargs": {"lr": lr},
         "batch_size": batch_size,
+        "ensemble_size": ensemble_size
     },
     "Beta_outer": {
         "loss": outer_bce_loss(lambda_reg=0.0),

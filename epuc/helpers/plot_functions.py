@@ -119,5 +119,5 @@ def plot_gaussian_nig_prediction_intervals(results_dict: dict, x_train: np.ndarr
             )
             ax[i, 1].legend()
 
-        fig.subplots_adjust(hspace=0.5)
-            return fig, ax
+    fig.subplots_adjust(hspace=0.5)
+    return fig, ax

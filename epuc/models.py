@@ -120,6 +120,7 @@ class NIGNN(nn.Module):
         self.fc_nu = nn.Linear(hidden_dim, output_dim)
         self.fc_alpha = nn.Linear(hidden_dim, output_dim)
         self.fc_beta = nn.Linear(hidden_dim, output_dim)
+        self.softplus = nn.Softplus()
 
         self.model = nn.Sequential(*self.layers)
 
