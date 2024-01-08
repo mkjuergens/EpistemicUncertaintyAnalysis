@@ -34,6 +34,7 @@ def _simulation_gamma_nig(
     type: str = "regression",
     dataset=PolynomialDataset,
     exp_name: Optional[str] = None,
+    save_dir: str = 'results'
 ):
     """function for doing the primary-secondary distribution analysis, saving the results in a
     dictionary and plotting it.
@@ -59,7 +60,7 @@ def _simulation_gamma_nig(
     x_train = dataset_eval.x_inst
     y_targets = dataset_eval.y_targets
 
-    save_path = "results/" + type + f"/{exp_name}"
+    save_path =f"{save_dir}/" + type + f"/{exp_name}"
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
@@ -177,5 +178,6 @@ def _simulation_gamma_nig(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_dir", dest="config_dir", type=str, required=True)
+    parser.add_argument("--save_dir", dest="save_dir", type=str, default="results")
     args = parser.parse_args()
     _simulation_gamma_nig(config_dir=args.config_dir)
