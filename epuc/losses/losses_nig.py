@@ -27,14 +27,25 @@ class NegativeLogLikelihoodLoss(torch.nn.Module):
         return loss.mean()
 
 
+def get_reg_val(params, y, reg_type: str = "evidence"):
+    if reg_type == "kl":
+        reg = reg_kl_div_nig(params, epsilon=0.0001)
+    elif reg_type == "evidence":
+        reg = evidence_regulizer_nig(params, y)
+    elif reg_type == "entropy":
+        # take negative of entropy (entropy is to be maximised)
+        reg = - entropy_NIG(params)
+    else:
+        raise NotImplementedError
+    return reg
+
+
 class outer_loss_der(torch.nn.Module):
     """
     outer expectation minimisation for the NIG-prior case.
     """
 
-    def __init__(
-        self, lambda_reg: float, reg_type: str = "evidence", epsilon: float = 0.0001
-    ):
+    def __init__(self, lambda_reg: float, reg_type: str = "evidence"):
         """
         Parameters
         ----------
@@ -47,19 +58,11 @@ class outer_loss_der(torch.nn.Module):
         """
         super().__init__()
         self.lambda_reg = lambda_reg
-        self.epsilon = epsilon
         self.reg_type = reg_type
 
     def forward(self, params_nig: list, y: torch.tensor):
         if self.lambda_reg > 0.0:
-            if self.reg_type == "kl":
-                reg = reg_kl_div_nig(params_nig, epsilon=self.epsilon)
-            elif self.reg_type == "evidence":
-                reg = evidence_regulizer_nig(params_nig, y)
-            elif self.reg_type == "entropy":
-                reg = entropy_NIG(params=params_nig)
-            else:
-                raise NotImplementedError
+            reg = get_reg_val(params=params_nig, y=y, reg_type=self.reg_type)
         else:
             reg = 0.0
 
@@ -96,14 +99,7 @@ class inner_loss_der(torch.nn.Module):
 
     def forward(self, params_nig: list, y: torch.tensor):
         if self.lambda_reg > 0.0:
-            if self.reg_type == "kl":
-                reg = reg_kl_div_nig(params_nig, epsilon=self.epsilon)
-            elif self.reg_type == "evidence":
-                reg = evidence_regulizer_nig(params_nig, y)
-            elif self.reg_type == "entropy":
-                reg = entropy_NIG(params=params_nig)
-            else:
-                raise TypeError
+            reg = get_reg_val(params=params_nig, y=y, reg_type=self.reg_type)
         else:
             reg = 0.0
 

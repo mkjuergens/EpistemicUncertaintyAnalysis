@@ -235,12 +235,14 @@ def _main_simulation(
             y_targets=y_targets, y_eval=y_eval
         )
     elif type == "regression":
+        eps_std = data_config["regression"]["eps_std"]
         fig, ax = plot_gaussian_nig_prediction_intervals(
             results_dict=results_per_ens_dict,
             x_train=x_train,
             y_targets=y_targets,
             x_eval=x_eval,
             y_eval=y_eval,
+            eps_std=eps_std
         )
 
     # save plot in same folder

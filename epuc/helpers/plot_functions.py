@@ -10,6 +10,7 @@ def plot_gaussian_nig_prediction_intervals(
     y_targets: np.ndarray,
     x_eval: np.ndarray,
     y_eval: np.ndarray,
+    eps_std: Optional[np.ndarray] = 3.0,
     figsize: tuple = (9, 21),
     list_subtitles: Optional[list] = None,
 ):
@@ -27,7 +28,9 @@ def plot_gaussian_nig_prediction_intervals(
     x_eval : np.ndarray
         array of instances where models are evaluated on
     y_eval : np.ndarray
-        array of "true" targets
+        array of "true" targets,
+    eps_std: np.ndarray or float
+       standard deviation (aleatoric uncertainty) in the function generating process
     figsize : tuple, optional
         size of figure, by default (9, 21)
     list_subtitles : Optional[list], optional
@@ -52,10 +55,18 @@ def plot_gaussian_nig_prediction_intervals(
             va="bottom",
             fontsize="large",
         )
+        ax[i, 0].axvline(x_train.min(), linestyle="--", color="black", alpha=0.5)
+        ax[i, 0].axvline(x_train.max(), linestyle="--", color="black", alpha=0.5)
+        ax[i, 1].axvline(x_train.min(), linestyle="--", color="black", alpha=0.5)
+        ax[i, 1].axvline(x_train.max(), linestyle="--", color="black", alpha=0.5)
         ax[i, 0].set_title("$\mu$")
-        ax[i, 1].set_title("$\sigma$")
+        ax[i, 1].set_title("$\sigma^2$")
         ax[i, 0].plot()
         ax[i, 0].plot(x_eval, y_eval, label="ground truth", color="red")
+        # plot horizontal line at eps_std **2
+        ax[i, 1].axhline(
+            eps_std**2, linestyle="--", color="red", label="grounds truth $sigma^2$"
+        )
 
         if ens_type == "Normal":
             # plot predictions for mu ------------------------------------
@@ -159,13 +170,14 @@ def plot_gaussian_nig_prediction_intervals(
 
 
 # TODO: def plot_bernoulli_beta_prediction_intervals()
-def plot_bernoulli_beta_prediction_intervals(results_dict: dict,
+def plot_bernoulli_beta_prediction_intervals(
+    results_dict: dict,
     x_train: np.ndarray,
     y_targets: np.ndarray,
     x_eval: np.ndarray,
     y_eval: np.ndarray,
-    figsize: tuple = (6, 21)):
-
+    figsize: tuple = (6, 21),
+):
     fig, ax = plt.subplots(len(results_dict), 1, figsize=figsize)
     for i, ens_type in enumerate(results_dict.keys()):
         fig.text(
@@ -178,18 +190,18 @@ def plot_bernoulli_beta_prediction_intervals(results_dict: dict,
         )
         ax[i].axvline(x_train.min(), linestyle="--", color="black")
         ax[i].axvline(x_train.max(), linestyle="--", color="black")
-    
+
         ax[i].plot(x_eval, y_eval, label=r"ground truth $\theta", color="red")
         # plot training data
         ax[i].scatter(
-                x_train,
-                y_targets,
-                label="training data",
-                marker="o",
-                s=20,
-                color="black",
-                alpha=0.1,
-            )
+            x_train,
+            y_targets,
+            label="training data",
+            marker="o",
+            s=20,
+            color="black",
+            alpha=0.1,
+        )
         if ens_type == "Bernoulli":
             # plot predictions for mu ------------------------------------
             ax[i].plot(
@@ -199,7 +211,10 @@ def plot_bernoulli_beta_prediction_intervals(results_dict: dict,
                 color="blue",
             )
             ax[i].plot(
-                x_eval, results_dict[ens_type]["pred_probs"][:,:,0], alpha=0.1, color="black"
+                x_eval,
+                results_dict[ens_type]["pred_probs"][:, :, 0],
+                alpha=0.1,
+                color="black",
             )
             ax[i].fill_between(
                 x_eval,
@@ -227,10 +242,8 @@ def plot_bernoulli_beta_prediction_intervals(results_dict: dict,
                 label="95% CI",
                 color="blue",
             )
-            
+
             ax[i].legend()
 
     fig.subplots_adjust(hspace=0.5)
     return fig, ax
-
-
