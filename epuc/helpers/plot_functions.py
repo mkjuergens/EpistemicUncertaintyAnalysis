@@ -179,11 +179,11 @@ def plot_bernoulli_beta_prediction_intervals(results_dict: dict,
         ax[i].axvline(x_train.min(), linestyle="--", color="black")
         ax[i].axvline(x_train.max(), linestyle="--", color="black")
     
-        ax[i].plot(x_eval, y_targets, label=r"ground truth $\theta", color="red")
+        ax[i].plot(x_eval, y_eval, label=r"ground truth $\theta", color="red")
         # plot training data
         ax[i].scatter(
                 x_train,
-                y_eval,
+                y_targets,
                 label="training data",
                 marker="o",
                 s=20,
