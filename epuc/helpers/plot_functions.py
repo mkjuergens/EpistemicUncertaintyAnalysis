@@ -220,24 +220,24 @@ def plot_bernoulli_beta_prediction_intervals(
     y_targets: np.ndarray,
     x_eval: np.ndarray,
     y_eval: np.ndarray,
-    figsize: tuple = (6, 21),
+    figsize: tuple = (9, 21),
 ):
-    fig, ax = plt.subplots(len(results_dict), 1, figsize=figsize)
+    fig, ax = plt.subplots(len(results_dict), 2, figsize=figsize)
     for i, ens_type in enumerate(results_dict.keys()):
         fig.text(
             0.5,
-            ax[i].get_position().bounds[1] + ax[i].get_position().height + 0.01,
+            ax[i, 0].get_position().bounds[1] + ax[i, 0].get_position().height + 0.01,
             f"{ens_type}",
             ha="center",
             va="bottom",
             fontsize="large",
         )
-        ax[i].axvline(x_train.min(), linestyle="--", color="black")
-        ax[i].axvline(x_train.max(), linestyle="--", color="black")
+        ax[i, 0].axvline(x_train.min(), linestyle="--", color="black")
+        ax[i, 0].axvline(x_train.max(), linestyle="--", color="black")
 
-        ax[i].plot(x_eval, y_eval, label=r"ground truth $\theta", color="red")
+        ax[i, 0].plot(x_eval, y_eval, label=r"ground truth $\theta", color="red")
         # plot training data
-        ax[i].scatter(
+        ax[i, 0].scatter(
             x_train,
             y_targets,
             label="training data",
@@ -248,19 +248,19 @@ def plot_bernoulli_beta_prediction_intervals(
         )
         if ens_type == "Bernoulli":
             # plot predictions for mu ------------------------------------
-            ax[i].plot(
+            ax[i, 0].plot(
                 x_eval,
                 results_dict[ens_type]["mean_probs"],
                 label="mean prediction",
                 color="blue",
             )
-            ax[i].plot(
+            ax[i, 0].plot(
                 x_eval,
                 results_dict[ens_type]["pred_probs"][:, :, 0],
                 alpha=0.1,
                 color="black",
             )
-            ax[i].fill_between(
+            ax[i, 0].fill_between(
                 x_eval,
                 results_dict[ens_type]["lower_p"],
                 results_dict[ens_type]["upper_p"],
@@ -268,17 +268,27 @@ def plot_bernoulli_beta_prediction_intervals(
                 label="95% CI",
                 color="gray",
             )
-            ax[i].legend()
+            ax[i, 0].legend()
+            # ------------------------------------
+            # plot predictions for theta
+            ax[i, 1].plot(
+            x_eval,
+            results_dict[ens_type]["mean_probs"],
+            label=r"$\theta$",
+            color="blue",
+                )
+            
+            ax[i, 1].legend()
 
         else:
             # plot predictions for mu ------------------------------------
-            ax[i].plot(
+            ax[i, 0].plot(
                 x_eval,
                 results_dict[ens_type]["mean_pred_p"],
                 label="mean prediction",
                 color="blue",
             )
-            ax[i].fill_between(
+            ax[i, 0].fill_between(
                 x_eval,
                 results_dict[ens_type]["lower_p"],
                 results_dict[ens_type]["upper_p"],
@@ -287,7 +297,22 @@ def plot_bernoulli_beta_prediction_intervals(
                 color="blue",
             )
 
-            ax[i].legend()
+            ax[i, 0].legend()
+            # ------------------------------------
+            # plot predicted parameters for the beta distribution
+            ax[i, 1].plot(
+                x_eval,
+                np.mean(results_dict[ens_type]["pred_alphas"], axis=1),
+                label=r"$\alpha$",
+                color="blue",
+            )
+            ax[i, 1].plot(
+                x_eval,
+                np.mean(results_dict[ens_type]["pred_betas"], axis=1),
+                label=r"$\beta$",
+                color="red",
+            )
+            ax[i, 1].legend()
 
     fig.subplots_adjust(hspace=0.5)
     return fig, ax
