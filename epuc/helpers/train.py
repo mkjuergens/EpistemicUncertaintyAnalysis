@@ -11,6 +11,7 @@ def train_model(
     n_epochs: int,
     optim,
     return_loss: bool = False,
+    device: str = "cuda",
     **kwargs
 ):
     """
@@ -36,6 +37,8 @@ def train_model(
     torch model
         trained model
     """
+    # add gpu support
+    model.to(device)
 
     model.train()
     optimizer = optim(model.parameters(), **kwargs)
@@ -44,6 +47,7 @@ def train_model(
     for epoch in range(n_epochs):
         loss_epoch = 0.0
         for x, y in dataloader:
+            x, y = x.to(device), y.to(device)
             optimizer.zero_grad()
             x = x.view(-1, 1)
             y = y.view(-1, 1).float()  # use float for BCE loss

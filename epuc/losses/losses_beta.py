@@ -137,9 +137,8 @@ def inner_bce_loss_beta(params: list, y: torch.tensor):
     assert alpha.shape == beta.shape, "alpha and beta must have the same shape"
     assert len(alpha) == len(y), "must have same number of prior parameters as labels"
 
-    bce_losses = - y * torch.log(alpha / (alpha + beta)) - (1 - y) * torch.log(beta / (alpha + beta))
-
-    return bce_losses.sum()    
+    losses = posterior_categ_beta(alpha, beta, y)
+    return losses.sum()    
 
 def inner_bce_loss_mcmc(params: list, y: torch.tensor, n_samples: int = 100):
 
@@ -151,6 +150,9 @@ def inner_bce_loss_mcmc(params: list, y: torch.tensor, n_samples: int = 100):
 
     return bce_losses.mean()
 
+def posterior_categ_beta(alpha: torch.tensor, beta: torch.tensor, y: torch.tensor):
+    losses = - y * torch.log(alpha / (alpha + beta)) - (1 - y) * torch.log(beta / (alpha + beta))
+    return losses
 
 if __name__ == "__main__":
     alpha = torch.ones(100, 1)*0.1

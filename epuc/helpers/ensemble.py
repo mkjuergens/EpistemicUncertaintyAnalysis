@@ -23,6 +23,7 @@ class Ensemble:
         self.ensemble_size = ensemble_size
         self.models = [create_model(model_config) for _ in range(ensemble_size)]
         self.losses = []
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def train(self, dataset, data_params, train_params: dict):
         """train an ensemble of models based on the same (resampled) dataset.
@@ -48,6 +49,7 @@ class Ensemble:
                 n_epochs=train_params["n_epochs"],
                 optim=train_params["optim"],
                 return_loss=True,
+                device=self.device,
                 **train_params["optim_kwargs"]
             )
             self.losses.append(loss)
@@ -68,12 +70,13 @@ class Ensemble:
         """
         preds = [model(x) for model in self.models]
         if isinstance(preds[0], torch.Tensor):
-            preds_out = torch.stack(preds, axis=1)
+            # back on cpu if on gpu
+            preds_out = torch.stack(preds, axis=1).cpu()
         elif isinstance(preds[0], (list, tuple)):
             preds_out = torch.zeros(x.shape[0], len(preds), len(preds[0]))
             for pred in range(len(preds[0])):
                 for ens in range(len(preds)):
-                    preds_out[:, ens, pred] = preds[ens][pred].squeeze()
+                    preds_out[:, ens, pred] = preds[ens][pred].squeeze().cpu()
         else:
             raise TypeError("unsupported prediction type {}".format(type(preds[0])))
         return preds_out
@@ -164,8 +167,8 @@ class NIGEnsemble(Ensemble):
         gamma, nu, alpha, beta = preds[:, 0], preds[:, 1], preds[:, 2], preds[:, 3]
         mean_mu = gamma
         var_mu = beta/(nu*(alpha -1))
-        mean_sigma2 = beta / (alpha - 1)
-        var_sigma2 = beta**2/((alpha -1)**2*(alpha -2))
+        mean_sigma2 = beta / (alpha - 1) # mean of inverse gamma distribution
+        var_sigma2 = beta**2/((alpha -1)**2*(alpha -2)) # variance of inverse gamma dist
 
         return mean_mu, var_mu, mean_sigma2, var_sigma2
 
