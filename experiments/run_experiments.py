@@ -170,6 +170,9 @@ def _main_simulation(
                 results_per_ens_dict[ens_type]["mean_sigma2"] = np.mean(
                     (preds[:, :, 1] ** 2), axis=1
                 )
+                results_per_ens_dict[ens_type]["mean_sigma"] = np.mean(
+                    preds[:, :, 1], axis=1
+                )
                 # results_per_ens_dict[ens_type]["mean_sigmas"] = mean_params[:, 1]
                 results_per_ens_dict[ens_type]["pred_mus"] = preds[:, :, 0]
                 results_per_ens_dict[ens_type]["pred_sigmas2"] = preds[:, :, 1] ** 2

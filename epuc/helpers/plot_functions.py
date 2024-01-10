@@ -11,7 +11,7 @@ def plot_gaussian_nig_prediction_intervals(
     x_eval: np.ndarray,
     y_eval: np.ndarray,
     eps_std: Optional[np.ndarray] = 3.0,
-    figsize: tuple = (9, 21),
+    figsize: tuple = (10, 21),
     list_subtitles: Optional[list] = None,
 ):
     """plot predcitions for first order loss minimisation (neg. log likelihood loss) as well as second order
@@ -40,7 +40,7 @@ def plot_gaussian_nig_prediction_intervals(
     -------
     fig, ax
     """
-    fig, ax = plt.subplots(len(results_dict), 2, figsize=figsize)
+    fig, ax = plt.subplots(len(results_dict), 3, figsize=figsize)
 
     for i, ens_type in enumerate(results_dict.keys()):
         if not list_subtitles:
@@ -61,6 +61,8 @@ def plot_gaussian_nig_prediction_intervals(
         ax[i, 1].axvline(x_train.max(), linestyle="--", color="black", alpha=0.5)
         ax[i, 0].set_title("$\mu$")
         ax[i, 1].set_title("$\sigma^2$")
+        ax[i, 2].set_title("predicted parameters")
+
         ax[i, 0].plot()
         ax[i, 0].plot(x_eval, y_eval, label="ground truth", color="red")
         # plot horizontal line at eps_std **2
@@ -120,6 +122,21 @@ def plot_gaussian_nig_prediction_intervals(
                 color="gray",
             )
             ax[i, 1].legend()
+            # ------------------------------------
+            # plot predicted parameters for the normal distribution
+            ax[i, 2].plot(
+                x_eval,
+                results_dict[ens_type]["mean_mus"],
+                label=r"$\mu$",
+                color="blue",
+            )
+            ax[i, 2].plot(
+                x_eval,
+                results_dict[ens_type]["mean_sigma"],
+                label=r"$\sigma$",
+            )
+            ax[i, 2].legend()
+
 
         else:
             # plot predictions for mu ------------------------------------
@@ -164,6 +181,33 @@ def plot_gaussian_nig_prediction_intervals(
                 color="blue",
             )
             ax[i, 1].legend()
+            # ------------------------------------
+            # plot predicted parameters for the normal-inverse-gamma distribution
+            ax[i, 2].plot(
+                x_eval,
+                np.mean(results_dict[ens_type]["pred_gammas"], axis=1),
+                label=r"$\gamma$",
+                color="blue",
+            )
+            ax[i, 2].plot(
+                x_eval,
+                np.mean(results_dict[ens_type]["pred_nus"], axis=1),
+                label=r"$\nu$",
+                color="red",
+            )
+            ax[i, 2].plot(
+                x_eval,
+                np.mean(results_dict[ens_type]["pred_alphas"], axis=1),
+                label=r"$\alpha$",
+                color="green",
+            )
+            ax[i, 2].plot(
+                x_eval,
+                np.mean(results_dict[ens_type]["pred_betas"], axis=1),
+                label=r"$\beta$",
+                color="orange",
+            )
+            ax[i, 2].legend()
 
     fig.subplots_adjust(hspace=0.5)
     return fig, ax
