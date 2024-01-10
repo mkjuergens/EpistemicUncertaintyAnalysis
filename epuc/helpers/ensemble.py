@@ -37,6 +37,7 @@ class Ensemble:
         train_params : dict
             dictionary containing the parameters for training
         """
+        print(f"Training {self.ensemble_size} models on {self.device}.")
         for model in tqdm(self.models):
             dataset_train = dataset(**data_params)
             data_loader = torch.utils.data.DataLoader(
