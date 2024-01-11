@@ -34,6 +34,30 @@ def entropy_dirichlet(alpha: torch.tensor):
     return entropy
 
 
+def entropy_regularizer_beta(params: list):
+    """returns the entropy of the BEta distribution for each parameter pair in a pair of
+      two lists of parameters alpha and beta.
+
+    Parameters
+    ----------
+    params : list containing two arrays of shape (n_instances, n_dim)
+        alpha and beta parameters of the Beta distribution per instance
+
+    Returns
+    -------
+    np.array of shape (n_instances, n_dim)
+        entropy per instance
+    """
+
+    alpha, beta = params # tensors of shape (n_instances, n_dim)
+    # stack them to get a tensor of shape (n_instances, 2, n_dim)
+    params = torch.stack((alpha, beta), dim=1)
+    entropy = entropy_dirichlet(params)
+
+    return entropy
+
+
+
 def entropy_NIG(params: list):
     """returns the entropy of a Normal-Inverse-Gamma distribution given a tensor of parameters for
     each instance.
@@ -107,3 +131,5 @@ if __name__ == "__main__":
         torch.tensor([2, 3, 10]).reshape(3,1),
     ]
     print(entropy_NIG(params_nig))
+    params_beta = [torch.tensor([1, 1, 1, 4]).reshape(4,1), torch.tensor([2, 3, 4, 5]).reshape(4,1)]
+    print(entropy_regularizer_beta(params=params_beta))

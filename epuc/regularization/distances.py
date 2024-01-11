@@ -120,7 +120,7 @@ def kl_divergergence_nig_torch(nu, alpha, epsilon: float = 0.001):
     return kl
 
 
-def sum_kl_divergence_beta(beta_params: list):
+def kl_divergence_beta(beta_params: list):
     """calculate the sum of the KL-divergenses between (multiple) parameters of the Beta distribution
     and the Beta(1,1) distribution (i.e. the uniform distribution over the simplex) for multiple instances.
 
@@ -136,7 +136,7 @@ def sum_kl_divergence_beta(beta_params: list):
         average KL-divergence
     """
 
-    alpha, beta = beta_params[0], beta_params[1]
+    alpha, beta = beta_params
     assert alpha.shape == beta.shape, "alpha and beta must have the same shape"
     beta_p = torch.zeros(alpha.shape[0], 2)
     beta_p[:, 0] = alpha.squeeze()
@@ -152,9 +152,9 @@ def sum_kl_divergence_beta(beta_params: list):
         dim=0,
     )
     # calculate sum
-    expected_kl_div = torch.sum(kl_div)
+    # expected_kl_div = torch.sum(kl_div) # do not take sum anymore as we average in the end
 
-    return expected_kl_div
+    return kl_div
 
 
 def reg_kl_div_nig(params_nig: list, epsilon: float = 0.0001):
