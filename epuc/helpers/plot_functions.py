@@ -65,7 +65,7 @@ def plot_gaussian_nig_prediction_intervals(
         ax[i, 1].set_title("$\sigma^2$")
         ax[i, 2].set_title("predicted parameters")
         if plot_mean_params:
-            ax[i, 3].set_title("mean params per epoch")
+            ax[i, 3].set_title("mean parameters")
 
         ax[i, 0].plot()
         ax[i, 0].plot(x_eval, y_eval, label="ground truth", color="red")

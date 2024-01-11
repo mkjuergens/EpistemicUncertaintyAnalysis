@@ -229,9 +229,9 @@ def _main_simulation(
     # plot results
     if type == "classification":
         if return_mean_params:
-            figsize = (10, 21)
+            figsize = (13, 21)
         else:
-            figsize = (10, 19)
+            figsize = (10, 21)
         fig, ax = plot_bernoulli_beta_prediction_intervals(
             results_dict=results_per_ens_dict,
             x_train=x_train,
@@ -243,9 +243,9 @@ def _main_simulation(
         )
     elif type == "regression":
         if return_mean_params:
-            figsize = (10, 23)
+            figsize = (15, 21)
         else:
-            figsize = (10, 21)
+            figsize = (11, 21)
         eps_std = data_config["regression"][data_type]["eps_std"]
         fig, ax = plot_gaussian_nig_prediction_intervals(
             results_dict=results_per_ens_dict,
