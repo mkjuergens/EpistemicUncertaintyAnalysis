@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Optional
 
 import torch
@@ -22,10 +23,18 @@ class Ensemble:
         self.model_config = model_config
         self.ensemble_size = ensemble_size
         self.models = [create_model(model_config) for _ in range(ensemble_size)]
-        self.losses = []
+        self.dict_mean_params = {}
+        self.dict_losses = {}
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def train(self, dataset, data_params, train_params: dict):
+    def train(
+        self,
+        dataset,
+        data_params,
+        train_params: dict,
+        return_mean_params: bool = False,
+        x_eval: Optional[torch.tensor] = None,
+    ):
         """train an ensemble of models based on the same (resampled) dataset.
 
         Parameters
@@ -38,22 +47,37 @@ class Ensemble:
             dictionary containing the parameters for training
         """
         print(f"Training {self.ensemble_size} models on {self.device}.")
-        for model in tqdm(self.models):
+        if return_mean_params:
+            ensemble_dicts = [defaultdict(list) for _ in range(self.ensemble_size)]
+        for i, model in enumerate(tqdm(self.models)):
             dataset_train = dataset(**data_params)
             data_loader = torch.utils.data.DataLoader(
                 dataset_train, batch_size=train_params["batch_size"], shuffle=True
             )
-            model, loss = train_model(
+            model, dict_returns = train_model(
                 model,
                 data_loader,
                 criterion=train_params["loss"],
                 n_epochs=train_params["n_epochs"],
                 optim=train_params["optim"],
                 return_loss=True,
+                return_params=return_mean_params,
+                x_eval=x_eval,
                 device=self.device,
-                **train_params["optim_kwargs"]
+                **train_params["optim_kwargs"],
             )
-            self.losses.append(loss)
+            self.dict_losses[i] = dict_returns["loss"]
+            if return_mean_params:
+                ensemble_dicts[i] = {
+                    k: dict_returns[k] for k in dict_returns.keys() if k != "loss"
+                }
+        # now average the list of dictionaries in ensemble_dicts to get one list per key
+        if return_mean_params:
+            for k in ensemble_dicts[0].keys():
+                self.dict_mean_params[k] = torch.stack(
+                    [torch.tensor(d[k]) for d in ensemble_dicts], axis=0
+                ).mean(axis=0)
+
 
     def predict(self, x):
         """
@@ -94,7 +118,7 @@ class Ensemble:
 
 
 class GaussianEnsemble(Ensemble):
-    """Ensmeble of models which predict a Gaussian distribution, that is, the mean and standard 
+    """Ensmeble of models which predict a Gaussian distribution, that is, the mean and standard
     deviation for each instance assuming the target values follow a Gaussian distribution.
     """
 
@@ -167,9 +191,11 @@ class NIGEnsemble(Ensemble):
         preds = self.predict_mean(x)
         gamma, nu, alpha, beta = preds[:, 0], preds[:, 1], preds[:, 2], preds[:, 3]
         mean_mu = gamma
-        var_mu = beta/(nu*(alpha -1))
-        mean_sigma2 = beta / (alpha - 1) # mean of inverse gamma distribution
-        var_sigma2 = beta**2/((alpha -1)**2*(alpha -2)) # variance of inverse gamma dist
+        var_mu = beta / (nu * (alpha - 1))
+        mean_sigma2 = beta / (alpha - 1)  # mean of inverse gamma distribution
+        var_sigma2 = beta**2 / (
+            (alpha - 1) ** 2 * (alpha - 2)
+        )  # variance of inverse gamma dist
 
         return mean_mu, var_mu, mean_sigma2, var_sigma2
 
@@ -182,19 +208,16 @@ class NIGEnsemble(Ensemble):
         al_uc = ep_uc * nu
 
         return ep_uc, al_uc
-    
 
-    
+
 class BetaEnsemble(Ensemble):
-
     def __init__(self, model_config: dict, ensemble_size: int):
         super().__init__(model_config, ensemble_size)
 
     def predict_mean_p(self, x):
         preds = self.predict(x)
-        pred_means = preds[:, :, 0]/(preds[:, :, 0] + preds[:, :, 1])
+        pred_means = preds[:, :, 0] / (preds[:, :, 0] + preds[:, :, 1])
         return pred_means.mean(axis=1)
-
 
 
 if __name__ == "__main__":

@@ -9,50 +9,31 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-from epuc.datasets import (
-    BernoulliSineDataset,
-    PolynomialDataset,
-    polynomial_fct,
-    sine_fct_prediction,
-)
+from epuc.datasets import create_evaluation_data
 from epuc.helpers.ensemble import Ensemble, GaussianEnsemble, NIGEnsemble, BetaEnsemble
 from epuc.configs import model_config, data_config, create_train_config
 from epuc.uncertainty import (
     get_upper_lower_bounds_normal,
     get_upper_lower_bounds_empirical,
     get_upper_lower_bounds_inv_gamma,
-    get_upper_lower_bounds_beta
+    get_upper_lower_bounds_beta,
 )
 
-from epuc.helpers.plot_functions import plot_gaussian_nig_prediction_intervals, plot_bernoulli_beta_prediction_intervals
+from epuc.helpers.plot_functions import (
+    plot_gaussian_nig_prediction_intervals,
+    plot_bernoulli_beta_prediction_intervals,
+)
 
 plt.style.use("seaborn-v0_8")
-
-def create_data(type: str = "regression", n_eval_points: int = 1000):
-    if type == "regression":
-        dataset = PolynomialDataset
-        dataset_eval = dataset(**data_config[type])
-        x_eval = torch.from_numpy(np.linspace(-6, 6, n_eval_points)).float()
-        y_eval = polynomial_fct(x_eval, degree=3)
-        x_train = dataset_eval.x_inst
-        y_targets = dataset_eval.y_targets
-
-    elif type == "classification":
-        dataset = BernoulliSineDataset
-        dataset_eval = dataset(**data_config[type])
-        x_eval = torch.from_numpy(np.linspace(0, 1, n_eval_points)).float()
-        y_eval = sine_fct_prediction(x_eval, freq=data_config["classification"]["sine_factor"])
-        x_train = dataset_eval.x_inst
-        y_targets = dataset_eval.y_labels
-
-    return dataset, x_eval, y_eval, x_train, y_targets
 
 
 def _main_simulation(
     config_dir,
     type: str = "regression",
+    data_type: str = "polynomial",
     exp_name: Optional[str] = None,
     save_dir: str = "results",
+    return_mean_params: bool = False,
 ):
     """function for doing the primary-secondary distribution analysis, saving the results in a
     dictionary and plotting it.
@@ -63,26 +44,32 @@ def _main_simulation(
         directory where
     type : str, optional
         type of the experiment, by default "regression"
+    data_type : str, optional
+        type of data, by default "polynomial"
     dataset : _type_, optional
         _description_, by default PolynomialDataset
     exp_name : Optional[str], optional
         _description_, by default None
+    mean_params: bool
+        whether to return the mean outputs per training epoch
     """
     if not exp_name:
         exp_name = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-
-    dataset, x_eval, y_eval, x_train, y_targets = create_data(type=type, n_eval_points=1000)
-
-    save_path = f"{save_dir}/" + type + f"/{exp_name}"
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
 
     # load json file located in the config_dir directory into a dictionary
     with open(config_dir) as json_file:
         temp_dict = json.load(json_file)
 
+    save_path = f"{save_dir}/" + type + f"/{exp_name}"
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+
     with open(save_path + "/params.json", "w") as outfile:
         json.dump(temp_dict, outfile)
+
+    dataset, x_eval, y_eval, x_train, y_targets = create_evaluation_data(
+        problem_type=type, data_type=data_type, n_eval_points=1000
+    )
 
     train_config = create_train_config(type=type, **temp_dict)
 
@@ -104,8 +91,8 @@ def _main_simulation(
         elif type == "classification":
             if ens_type == "Bernoulli":
                 ensemble = Ensemble(
-                    model_config=model_config["Bernoulli"], 
-                    ensemble_size= train_config[ens_type]["ensemble_size"]
+                    model_config=model_config["Bernoulli"],
+                    ensemble_size=train_config[ens_type]["ensemble_size"],
                 )
             else:
                 ensemble = BetaEnsemble(
@@ -117,9 +104,15 @@ def _main_simulation(
 
         ensemble.train(
             dataset=dataset,
-            data_params=data_config[type],
+            data_params=data_config[type][data_type],
             train_params=train_config[ens_type],
+            return_mean_params=return_mean_params,
+            x_eval=x_eval,
         )
+        if return_mean_params:
+
+            for key in ensemble.dict_mean_params.keys():
+                results_per_ens_dict[ens_type][key] = ensemble.dict_mean_params[key]
 
         preds = ensemble.predict(x_eval.view(-1, 1)).detach().numpy()
 
@@ -130,7 +123,6 @@ def _main_simulation(
         # results_per_ens_dict[ens_type]["std_params"] = std_params
 
         if type == "classification":
-
             if ens_type == "Bernoulli":
                 std_params = ensemble.predict_std(x_eval.view(-1, 1))
 
@@ -139,29 +131,28 @@ def _main_simulation(
 
                 # confidence bounds
                 lower_p, upper_p = get_upper_lower_bounds_empirical(
-                    p=0.975,
-                    y = preds[:, :, 0]
+                    p=0.975, y=preds[:, :, 0]
                 )
 
                 results_per_ens_dict[ens_type]["lower_p"] = lower_p
                 results_per_ens_dict[ens_type]["upper_p"] = upper_p
 
             else:
-
                 results_per_ens_dict[ens_type]["pred_alphas"] = preds[:, :, 0]
                 results_per_ens_dict[ens_type]["pred_betas"] = preds[:, :, 1]
 
-                results_per_ens_dict[ens_type]["mean_pred_p"] = ensemble.predict_mean_p(x_eval.view(-1, 1)).detach().numpy()    
+                results_per_ens_dict[ens_type]["mean_pred_p"] = (
+                    ensemble.predict_mean_p(x_eval.view(-1, 1)).detach().numpy()
+                )
 
                 # confidence bounds
                 lower_p, upper_p = get_upper_lower_bounds_beta(
-                        p=0.975, alpha=mean_params[:, 0], beta=mean_params[:, 1]
-                    )
+                    p=0.975, alpha=mean_params[:, 0], beta=mean_params[:, 1]
+                )
                 results_per_ens_dict[ens_type]["lower_p"] = lower_p
                 results_per_ens_dict[ens_type]["upper_p"] = upper_p
 
         elif type == "regression":
-
             if ens_type == "Normal":
                 std_params = ensemble.predict_std(x_eval.view(-1, 1)).detach().numpy()
 
@@ -194,16 +185,21 @@ def _main_simulation(
                 results_per_ens_dict[ens_type]["upper_sigma"] = upper_sigma2
 
             else:
-                mean_mu, var_mu, mean_sigma2, var_sigma2 = ensemble.predict_normal_params(
-                    x_eval.view(-1, 1)
-                )
+                (
+                    mean_mu,
+                    var_mu,
+                    mean_sigma2,
+                    var_sigma2,
+                ) = ensemble.predict_normal_params(x_eval.view(-1, 1))
 
                 results_per_ens_dict[ens_type]["pred_gammas"] = preds[:, :, 0]
                 results_per_ens_dict[ens_type]["pred_nus"] = preds[:, :, 1]
                 results_per_ens_dict[ens_type]["pred_alphas"] = preds[:, :, 2]
                 results_per_ens_dict[ens_type]["pred_betas"] = preds[:, :, 3]
 
-                results_per_ens_dict[ens_type]["mean_pred_mu"] = mean_mu.detach().numpy()
+                results_per_ens_dict[ens_type][
+                    "mean_pred_mu"
+                ] = mean_mu.detach().numpy()
                 results_per_ens_dict[ens_type][
                     "mean_pred_sigma2"
                 ] = mean_sigma2.detach().numpy()
@@ -232,20 +228,34 @@ def _main_simulation(
 
     # plot results
     if type == "classification":
+        if return_mean_params:
+            figsize = (10, 21)
+        else:
+            figsize = (10, 19)
         fig, ax = plot_bernoulli_beta_prediction_intervals(
             results_dict=results_per_ens_dict,
-            x_train=x_train, x_eval=x_eval,
-            y_targets=y_targets, y_eval=y_eval
+            x_train=x_train,
+            x_eval=x_eval,
+            y_targets=y_targets,
+            y_eval=y_eval,
+            figsize=figsize,
+            plot_mean_params=return_mean_params
         )
     elif type == "regression":
-        eps_std = data_config["regression"]["eps_std"]
+        if return_mean_params:
+            figsize = (10, 23)
+        else:
+            figsize = (10, 21)
+        eps_std = data_config["regression"][data_type]["eps_std"]
         fig, ax = plot_gaussian_nig_prediction_intervals(
             results_dict=results_per_ens_dict,
             x_train=x_train,
             y_targets=y_targets,
             x_eval=x_eval,
             y_eval=y_eval,
-            eps_std=eps_std
+            eps_std=eps_std,
+            figsize=figsize,
+            plot_mean_params=return_mean_params
         )
 
     # save plot in same folder
@@ -257,5 +267,15 @@ if __name__ == "__main__":
     parser.add_argument("--config_dir", dest="config_dir", type=str, required=True)
     parser.add_argument("--save_dir", dest="save_dir", type=str, default="results")
     parser.add_argument("--type", dest="type", type=str, default="regression")
+    parser.add_argument("--exp_name", default=None, type=str)
+    parser.add_argument("--data_type", dest="data_type", type=str, required=True)
+    parser.add_argument("--return_mean_params", dest="return_mean_params", type=bool, default=False)
     args = parser.parse_args()
-    _main_simulation(config_dir=args.config_dir, type=args.type, save_dir=args.save_dir)
+    _main_simulation(
+        config_dir=args.config_dir,
+        type=args.type,
+        data_type=args.data_type,
+        save_dir=args.save_dir,
+        exp_name=args.exp_name,
+        return_mean_params=args.return_mean_params,
+    )

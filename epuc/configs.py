@@ -102,31 +102,43 @@ model_config = {
 
 data_config = {
     "classification": {
-        "n_samples_1": 1000,
-        "n_samples_2": 0,
-        "x_min": 0.0,
-        "x_max": 1.0,
-        "x_split": 0.5,
-        "sine_factor": 5.0,
-    },
-    "SineRegression": {
-        "n_samples_1": 1000,
-        "n_samples_2": 10,
-        "x_min": 0.0,
-        "x_max": 1.0,
-        "x_split": 0.5,
-        "sine_factor": 5.0,
-        "eps_std": 0.03,
+        "sine": {
+            "n_samples_1": 1000,
+            "n_samples_2": 0,
+            "x_min": 0.0,
+            "x_max": 1.0,
+            "x_split": 0.5,
+            "sine_factor": 5.0},
+
+        "linear": {
+            "n_samples_1": 1000,
+            "n_samples_2": 0,
+            "x_min": 0.0,
+            "x_max": 1.0,
+            "x_split": 0.5,
+            "slope": -1.0,
+            "intercept": 1.0},
+
     },
     "regression": {
-        "n_samples": 1000,
-        "x_min": -4,
-        "x_max": 4,
-        "degree": 3,
-        "eps_std": 3,
-    },
+        "sine": {
+            "n_samples_1": 1000,
+            "n_samples_2": 10,
+            "x_min": 0.0,
+            "x_max": 1.0,
+            "x_split": 0.5,
+            "eps_std": 0.03,
+            "sine_factor": 5.0,
+        },
+        "polynomial": {
+            "n_samples": 1000,
+            "x_min": -4,
+            "x_max": 4,
+            "degree": 3,
+            "eps_std": 3,
+        },
 }
-
+}
 
 def create_train_config_regression(
     lambda_reg: float = 0.1,
@@ -195,6 +207,7 @@ def create_train_config_classification(
     n_epochs: int = 1000,
     batch_size: int = 128,
     lr: float = 0.001,
+    reg_type: str = "kl",
     ensemble_size: int = 100,
     ensemble_size_secondary: int = 1,
 ):
@@ -216,7 +229,7 @@ def create_train_config_classification(
             "ensemble_size": ensemble_size_secondary,
         },
         "Beta_outer_reg": {
-            "loss": outer_bce_loss(lambda_reg=lambda_reg),
+            "loss": outer_bce_loss(lambda_reg=lambda_reg, reg_type=reg_type),
             "n_epochs": n_epochs,
             "optim": torch.optim.Adam,
             "optim_kwargs": {"lr": lr},
@@ -232,7 +245,7 @@ def create_train_config_classification(
             "ensemble_size": ensemble_size_secondary,
         },
         "Beta_inner_reg": {
-            "loss": inner_bce_loss(lambda_reg=0.1),
+            "loss": inner_bce_loss(lambda_reg=0.1, reg_type=reg_type),
             "n_epochs": n_epochs,
             "optim": torch.optim.Adam,
             "optim_kwargs": {"lr": lr},

@@ -13,6 +13,7 @@ def plot_gaussian_nig_prediction_intervals(
     eps_std: Optional[np.ndarray] = 3.0,
     figsize: tuple = (10, 21),
     list_subtitles: Optional[list] = None,
+    plot_mean_params: bool = False
 ):
     """plot predcitions for first order loss minimisation (neg. log likelihood loss) as well as second order
     loss minimisation methods predicitng the parameters of the normal-inverse-gamma distribution.
@@ -40,7 +41,8 @@ def plot_gaussian_nig_prediction_intervals(
     -------
     fig, ax
     """
-    fig, ax = plt.subplots(len(results_dict), 3, figsize=figsize)
+    n_cols = 3 if not plot_mean_params else 4
+    fig, ax = plt.subplots(len(results_dict), n_cols, figsize=figsize)
 
     for i, ens_type in enumerate(results_dict.keys()):
         if not list_subtitles:
@@ -62,6 +64,8 @@ def plot_gaussian_nig_prediction_intervals(
         ax[i, 0].set_title("$\mu$")
         ax[i, 1].set_title("$\sigma^2$")
         ax[i, 2].set_title("predicted parameters")
+        if plot_mean_params:
+            ax[i, 3].set_title("mean params per epoch")
 
         ax[i, 0].plot()
         ax[i, 0].plot(x_eval, y_eval, label="ground truth", color="red")
@@ -69,6 +73,9 @@ def plot_gaussian_nig_prediction_intervals(
         ax[i, 1].axhline(
             eps_std**2, linestyle="--", color="red", label="grounds truth $sigma^2$"
         )
+        ax[i,0].set_xlabel("x")
+        ax[i,1].set_xlabel("x")
+        ax[i,2].set_xlabel("x")
 
         if ens_type == "Normal":
             # plot predictions for mu ------------------------------------
@@ -136,6 +143,14 @@ def plot_gaussian_nig_prediction_intervals(
                 label=r"$\sigma$",
             )
             ax[i, 2].legend()
+            # ------------------------------------
+            # plotmean output parameters if desired
+            if plot_mean_params:
+                ax[i, 3].plot(results_dict[ens_type]["param_0"], label=r"$\mu$")
+                ax[i, 3].plot(results_dict[ens_type]["param_1"], label=r"$\sigma$")
+                ax[i, 3].set_xlabel("epoch")
+                ax[i, 3].legend()
+
 
 
         else:
@@ -208,12 +223,21 @@ def plot_gaussian_nig_prediction_intervals(
                 color="orange",
             )
             ax[i, 2].legend()
+            # ------------------------------------
+            # plot mean output parameters if desired
+            if plot_mean_params:
+                ax[i, 3].plot(results_dict[ens_type]["param_0"], label=r"$\gamma$")
+                ax[i, 3].plot(results_dict[ens_type]["param_1"], label=r"$\nu$")
+                ax[i, 3].plot(results_dict[ens_type]["param_2"], label=r"$\alpha$")
+                ax[i, 3].plot(results_dict[ens_type]["param_3"], label=r"$\beta$")
+                ax[i, 3].set_xlabel("epoch")
+                ax[i, 3].legend()
+
 
     fig.subplots_adjust(hspace=0.5)
     return fig, ax
 
 
-# TODO: def plot_bernoulli_beta_prediction_intervals()
 def plot_bernoulli_beta_prediction_intervals(
     results_dict: dict,
     x_train: np.ndarray,
@@ -221,8 +245,11 @@ def plot_bernoulli_beta_prediction_intervals(
     x_eval: np.ndarray,
     y_eval: np.ndarray,
     figsize: tuple = (9, 21),
+    plot_mean_params: bool = False
 ):
-    fig, ax = plt.subplots(len(results_dict), 2, figsize=figsize)
+    
+    n_cols = 2 if not plot_mean_params else 3
+    fig, ax = plt.subplots(len(results_dict), n_cols, figsize=figsize)
     for i, ens_type in enumerate(results_dict.keys()):
         fig.text(
             0.5,
@@ -234,7 +261,12 @@ def plot_bernoulli_beta_prediction_intervals(
         )
         ax[i, 0].axvline(x_train.min(), linestyle="--", color="black")
         ax[i, 0].axvline(x_train.max(), linestyle="--", color="black")
-
+        ax[i, 0].set_title(r"$\theta$")
+        ax[i, 1].set_title("predicted parameters")
+        if plot_mean_params:
+            ax[i, 2].set_title("mean parameters")
+        ax[i, 0].set_xlabel("x")
+        ax[i, 1].set_xlabel("x")
         ax[i, 0].plot(x_eval, y_eval, label=r"ground truth $\theta$", color="red")
         # plot training data
         ax[i, 0].scatter(
@@ -279,6 +311,12 @@ def plot_bernoulli_beta_prediction_intervals(
                 )
             
             ax[i, 1].legend()
+            # ------------------------------------
+            # plot mean output parameters if desired
+            if plot_mean_params:
+                ax[i, 2].plot(results_dict[ens_type]["param_0"], label=r"$\theta$")
+                ax[i, 2].set_xlabel("epoch")
+                ax[i, 2].legend()
 
         else:
             # plot predictions for mu ------------------------------------
@@ -313,6 +351,13 @@ def plot_bernoulli_beta_prediction_intervals(
                 color="red",
             )
             ax[i, 1].legend()
+            # ------------------------------------
+            # plot mean output parameters if desired
+            if plot_mean_params:
+                ax[i, 2].plot(results_dict[ens_type]["param_0"], label=r"$\alpha$")
+                ax[i, 2].plot(results_dict[ens_type]["param_1"], label=r"$\beta$")
+                ax[i, 2].set_xlabel("epoch")
+                ax[i, 2].legend()
 
     fig.subplots_adjust(hspace=0.5)
     return fig, ax

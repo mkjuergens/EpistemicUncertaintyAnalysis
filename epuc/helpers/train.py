@@ -1,8 +1,18 @@
+from collections import defaultdict
+from typing import Optional
+
 import torch
 import numpy as np
 
 from torch.utils.data import Dataset, DataLoader
 from epuc.models import PredictorModel, RegressorModel, BetaNN
+
+
+def stack_output(output: Optional[torch.tensor]):
+
+    if isinstance(output, (list, tuple)):
+        output = torch.stack(output, axis=1)
+    return output
 
 def train_model(
     model,
@@ -11,6 +21,8 @@ def train_model(
     n_epochs: int,
     optim,
     return_loss: bool = False,
+    return_params: bool = False,
+    x_eval: Optional[torch.tensor] = None,
     device: str = "cuda",
     **kwargs
 ):
@@ -31,6 +43,10 @@ def train_model(
         optimizer to use for training
     return_loss : bool, optional
         whether to return the loss, by default False
+    return_params : bool, optional
+        whether to return the outputs of the model per epoch, by default False
+    x_eval: torch.tensor, optional
+        instances to evaluate the model on, by default None
 
     Returns
     -------
@@ -42,8 +58,7 @@ def train_model(
 
     model.train()
     optimizer = optim(model.parameters(), **kwargs)
-    if return_loss:
-        loss_list = []
+    dict_returns = defaultdict(list)
     for epoch in range(n_epochs):
         loss_epoch = 0.0
         for x, y in dataloader:
@@ -58,9 +73,20 @@ def train_model(
             loss.backward()
             optimizer.step()
         if return_loss:
-            loss_list.append(loss_epoch / len(dataloader))
+            dict_returns['loss'].append(loss_epoch / len(dataloader))
+        if return_params:
+            # TODO: calculate average of outputs for each output of the model
+            assert x_eval is not None, "x_eval must be provided if return_params is True"
+            x_eval = x_eval.to(device).view(-1, 1).float()
+            preds_out = model(x_eval) # of shape ()
+            if isinstance(preds_out, (list, tuple)):
+                preds_out = torch.stack(preds_out, axis=1)
+            mean_params = preds_out.mean(dim=0)
+            for idx in range(len(mean_params)):
+                dict_returns[f'param_{idx}'].append(mean_params[idx].item())
 
-    return model if not return_loss else (model, loss_list)
+    return model if not dict_returns else (model, dict_returns)
+
 
 
 def train_multiple_models_secondary_loss_beta(
