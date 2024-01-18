@@ -254,7 +254,7 @@ if __name__ == "__main__":
     parser.add_argument("--exp_name", default=None, type=str)
     parser.add_argument("--data_type", dest="data_type", type=str, required=True)
     parser.add_argument(
-        "--return_mean_params", dest="return_mean_params", type=bool, default=False
+        "--return_mean_params", dest="return_mean_params", type=bool, default=True
     )
 
     args = parser.parse_args()
