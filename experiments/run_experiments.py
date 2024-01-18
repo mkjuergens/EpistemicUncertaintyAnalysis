@@ -35,6 +35,7 @@ def _main_simulation(
     exp_name: Optional[str] = None,
     save_dir: str = "results",
     return_mean_params: bool = False,
+    return_std_params: bool = False,
 ):
     """function for doing the primary-secondary distribution analysis, saving the results in a
     dictionary and plotting it.
@@ -92,11 +93,15 @@ def _main_simulation(
             data_params=data_config[type][data_type],
             train_params=train_config[ens_type],
             return_mean_params=return_mean_params,
+            return_std_params=return_std_params,
             x_eval=x_eval,
         )
         if return_mean_params:
             for key in ensemble.dict_mean_params.keys():
                 results_per_ens_dict[ens_type][key] = ensemble.dict_mean_params[key]
+        if return_std_params:
+            for key in ensemble.dict_std_params.keys():
+                results_per_ens_dict[ens_type][f'{key}_std'] = ensemble.dict_std_params[key]
 
         preds = ensemble.predict(x_eval.view(-1, 1)).detach().numpy()
 
@@ -256,6 +261,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--return_mean_params", dest="return_mean_params", type=bool, default=True
     )
+    parser.add_argument(
+        "--return_std_params", dest="return_std_params", type=bool, default=True
+    )
 
     args = parser.parse_args()
     _main_simulation(
@@ -265,4 +273,5 @@ if __name__ == "__main__":
         save_dir=args.save_dir,
         exp_name=args.exp_name,
         return_mean_params=args.return_mean_params,
+        return_std_params=args.return_std_params,
     )

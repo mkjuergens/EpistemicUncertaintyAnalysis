@@ -24,6 +24,7 @@ class Ensemble:
         self.ensemble_size = ensemble_size
         self.models = [create_model(model_config) for _ in range(ensemble_size)]
         self.dict_mean_params = {}
+        self.dict_std_params = {}
         self.dict_losses = {}
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -33,6 +34,7 @@ class Ensemble:
         data_params,
         train_params: dict,
         return_mean_params: bool = False,
+        return_std_params: bool = False,
         x_eval: Optional[torch.tensor] = None,
     ):
         """train an ensemble of models based on the same (resampled) dataset.
@@ -77,6 +79,12 @@ class Ensemble:
                 self.dict_mean_params[k] = torch.stack(
                     [torch.tensor(d[k]) for d in ensemble_dicts], axis=0
                 ).mean(axis=0)
+        if return_std_params:
+            for k in ensemble_dicts[0].keys():
+                self.dict_std_params[k] = torch.stack(
+                    [torch.tensor(d[k]) for d in ensemble_dicts], axis=0
+                ).std(axis=0)
+
 
 
     def predict(self, x):
