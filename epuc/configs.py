@@ -56,6 +56,7 @@ def create_train_config(
         return create_train_config_classification(
             lambda_reg=lambda_reg, n_epochs=n_epochs, batch_size=batch_size, lr=lr,
             ensemble_size=ensemble_size, ensemble_size_secondary=ensemble_size_secondary,
+            reg_type=reg_type
         )
     else:
         raise NotImplementedError
@@ -103,15 +104,16 @@ model_config = {
 data_config = {
     "classification": {
         "sine": {
-            "n_samples_1": 1000,
+            "n_samples_1": 500,
             "n_samples_2": 0,
             "x_min": 0.0,
             "x_max": 1.0,
             "x_split": 0.5,
-            "sine_factor": 5.0},
+            "sine_factor": 2.0,
+            "amplitude": 0.8},
 
         "linear": {
-            "n_samples_1": 1000,
+            "n_samples_1": 500,
             "n_samples_2": 0,
             "x_min": 0.0,
             "x_max": 1.0,
@@ -122,16 +124,16 @@ data_config = {
     },
     "regression": {
         "sine": {
-            "n_samples_1": 1000,
+            "n_samples_1": 500,
             "n_samples_2": 10,
             "x_min": 0.0,
             "x_max": 1.0,
             "x_split": 0.5,
             "eps_std": 0.03,
-            "sine_factor": 5.0,
+            "sine_factor": 2.0,
         },
         "polynomial": {
-            "n_samples": 1000,
+            "n_samples": 500,
             "x_min": -4,
             "x_max": 4,
             "degree": 3,

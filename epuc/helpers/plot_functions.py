@@ -237,6 +237,22 @@ def plot_gaussian_nig_prediction_intervals(
     fig.subplots_adjust(hspace=0.5)
     return fig, ax
 
+def plot_bernoulli_simulation(
+        results_primary: dict,
+        results_secondary: dict,
+        x_train: np.ndarray,
+        y_targets: np.ndarray,
+        x_eval: np.ndarray,
+        y_eval: np.ndarray,
+        figsize: tuple = (15, 9),
+        plot_mean_params: bool = True,
+        list_subtitles: Optional[list] = None,
+):
+    n_rows = 2
+    n_cols = 2 if not plot_mean_params else 3
+    fig, ax = plt.subplots(n_rows, n_cols, figsize=figsize)
+    
+
 
 def plot_bernoulli_beta_prediction_intervals(
     results_dict: dict,
@@ -360,4 +376,5 @@ def plot_bernoulli_beta_prediction_intervals(
                 ax[i, 2].legend()
 
     fig.subplots_adjust(hspace=0.5)
+
     return fig, ax

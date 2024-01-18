@@ -5,8 +5,8 @@ from torch.utils.data import Dataset
 from epuc.configs import data_config
 
 
-def sine_fct_prediction(x, freq: float = 5.0):
-    pred_fct = lambda x: 0.5 * np.sin(freq * x) + 0.5
+def sine_fct_prediction(x, freq: float = .5, amplitude: float = 0.8):
+    pred_fct = lambda x: 0.5*(amplitude * np.sin(2 * np.pi * freq * x) + 1)
     return pred_fct(x)
 
 
@@ -34,7 +34,8 @@ class BernoulliSineDataset(Dataset):
         self,
         n_samples_1: int,
         n_samples_2: int,
-        sine_factor: int = 5,
+        sine_factor: int = .5,
+        amplitude: float = .8,
         x_min: float = 1.0,
         x_max: float = 1.0,
         x_split: float = 0.5,
@@ -61,6 +62,7 @@ class BernoulliSineDataset(Dataset):
         self.n_samples_1 = n_samples_1
         self.n_samples_2 = n_samples_2
         self.sine_factor = sine_factor
+        self.amplitude = amplitude
         self.split = x_split
         # instances within range
         self.x_inst_in = torch.from_numpy(
@@ -75,7 +77,7 @@ class BernoulliSineDataset(Dataset):
         else:
             self.x_inst = self.x_inst_in
         # generate labels whose class probability is given by the sine function
-        fct_pred = lambda x: sine_fct_prediction(x, freq=self.sine_factor)
+        fct_pred = lambda x: sine_fct_prediction(x, freq=self.sine_factor, amplitude=self.amplitude)
         self.y_labels, self.preds = generate_bernoulli_labels(self.x_inst, fct_pred)
 
     def __len__(self):

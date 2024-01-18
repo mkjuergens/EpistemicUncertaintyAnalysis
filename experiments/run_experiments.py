@@ -53,6 +53,7 @@ def _main_simulation(
     mean_params: bool
         whether to return the mean outputs per training epoch
     """
+    
     if not exp_name:
         exp_name = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
