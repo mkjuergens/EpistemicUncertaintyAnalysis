@@ -1,6 +1,7 @@
 import torch
 
 from epuc.models import BetaNN, NIGNN, PredictorModel, RegressorModel
+from epuc.helpers.ensemble import Ensemble, GaussianEnsemble, BetaEnsemble, NIGEnsemble
 from epuc.losses import *
 
 
@@ -13,6 +14,9 @@ def create_train_config(
     reg_type: str = "evidence",
     ensemble_size: int = 100,
     ensemble_size_secondary: int = 1,
+    hidden_dim: int = 50,
+    n_hidden_layers: int = 1,
+    output_dim: int = 1,
 ):
     """creates the training configuration for the specific problem given the training parameters.
 
@@ -51,15 +55,93 @@ def create_train_config(
             reg_type=reg_type,
             ensemble_size=ensemble_size,
             ensemble_size_secondary=ensemble_size_secondary,
+            hidden_dim=hidden_dim,
+            n_hidden_layers=n_hidden_layers,
+            output_dim=output_dim,
         )
     elif type == "classification":
         return create_train_config_classification(
-            lambda_reg=lambda_reg, n_epochs=n_epochs, batch_size=batch_size, lr=lr,
-            ensemble_size=ensemble_size, ensemble_size_secondary=ensemble_size_secondary,
-            reg_type=reg_type
+            lambda_reg=lambda_reg,
+            n_epochs=n_epochs,
+            batch_size=batch_size,
+            lr=lr,
+            ensemble_size=ensemble_size,
+            ensemble_size_secondary=ensemble_size_secondary,
+            reg_type=reg_type,
+            hidden_dim=hidden_dim,
+            n_hidden_layers=n_hidden_layers,
+            output_dim=output_dim,
         )
     else:
         raise NotImplementedError
+
+
+def create_model_config(
+    hidden_dim: int = 50,
+    n_hidden_layers: int = 1,
+    output_dim: int = 1,
+    use_softplus: bool = True,
+):
+    """creates the model configuration for the specific problem given the model parameters.
+
+    Parameters
+    ----------
+    type : str, optional
+        type of problem, by default "regression". Options are {"regression", "classification"}
+    hidden_dim : int, optional
+        number of hidden units, by default 50
+    n_hidden_layers : int, optional
+        number of hidden layers, by default 1
+    output_dim : int, optional
+        output dimension, by default 1
+    use_softplus : bool, optional
+        whether to use softplus activation function, by default True
+
+    Returns
+    -------
+    dict
+        dictionary with parameters for each experiment
+
+    """
+    model_config = {
+        "Bernoulli": {
+            "model": PredictorModel,
+            "kwargs": {
+                "hidden_dim": hidden_dim,
+                "n_hidden_layers": n_hidden_layers,
+                "output_dim": output_dim,
+                "use_softplus": use_softplus,
+            },
+        },
+        "Normal": {
+            "model": RegressorModel,
+            "kwargs": {
+                "hidden_dim": hidden_dim,
+                "n_hidden_layers": n_hidden_layers,
+                "use_softplus": use_softplus,
+                "output_dim": output_dim,
+            },
+        },
+        "Beta": {
+            "model": BetaNN,
+            "kwargs": {
+                "hidden_dim": hidden_dim,
+                "n_hidden_layers": n_hidden_layers,
+                "use_softplus": use_softplus,
+                "output_dim": output_dim,
+            },
+        },
+        "NormalInverseGamma": {
+            "model": NIGNN,
+            "kwargs": {
+                "hidden_dim": hidden_dim,
+                "n_hidden_layers": n_hidden_layers,
+                "use_softplus": use_softplus,
+                "output_dim": output_dim,
+            },
+        },
+    }
+    return model_config
 
 
 model_config = {
@@ -110,8 +192,8 @@ data_config = {
             "x_max": 1.0,
             "x_split": 0.5,
             "sine_factor": 2.0,
-            "amplitude": 0.8},
-
+            "amplitude": 0.8,
+        },
         "linear": {
             "n_samples_1": 500,
             "n_samples_2": 0,
@@ -119,8 +201,8 @@ data_config = {
             "x_max": 1.0,
             "x_split": 0.5,
             "slope": -1.0,
-            "intercept": 1.0},
-
+            "intercept": 1.0,
+        },
     },
     "regression": {
         "sine": {
@@ -139,8 +221,9 @@ data_config = {
             "degree": 3,
             "eps_std": 3,
         },
+    },
 }
-}
+
 
 def create_train_config_regression(
     lambda_reg: float = 0.1,
@@ -150,13 +233,20 @@ def create_train_config_regression(
     reg_type: str = "evidence",
     ensemble_size: int = 100,
     ensemble_size_secondary: int = 1,
+    hidden_dim: int = 50,
+    n_hidden_layers: int = 1,
+    output_dim: int = 1,
 ):
     """
     creates the cinfiguration for all models trained for the regression experiments
     """
+    model_config = create_model_config(
+        hidden_dim=hidden_dim, n_hidden_layers=n_hidden_layers, output_dim=output_dim
+    )
     train_config_regression = {
         "Normal": {
-            "model": RegressorModel,
+            "model_config": model_config["Normal"],
+            "ensemble": GaussianEnsemble,
             "loss": NegativeLogLikelihoodLoss(),
             "n_epochs": n_epochs,
             "optim": torch.optim.Adam,
@@ -165,7 +255,8 @@ def create_train_config_regression(
             "ensemble_size": ensemble_size,
         },
         "NIG_outer": {
-            "model": NIGNN,
+            "model_config": model_config["NormalInverseGamma"],
+            "ensemble": NIGEnsemble,
             "loss": outer_loss_der(lambda_reg=0.0),
             "n_epochs": n_epochs,
             "optim": torch.optim.Adam,
@@ -174,7 +265,8 @@ def create_train_config_regression(
             "ensemble_size": ensemble_size_secondary,
         },
         "NIG_outer_reg": {
-            "model": NIGNN,
+            "model_config": model_config["NormalInverseGamma"],
+            "ensemble": NIGEnsemble,
             "loss": outer_loss_der(lambda_reg=0.1, reg_type=reg_type),
             "n_epochs": n_epochs,
             "optim": torch.optim.Adam,
@@ -183,7 +275,8 @@ def create_train_config_regression(
             "ensemble_size": ensemble_size_secondary,
         },
         "NIG_inner": {
-            "model": NIGNN,
+            "model_config": model_config["NormalInverseGamma"],
+            "ensemble": NIGEnsemble,
             "loss": inner_loss_der(lambda_reg=0.0),
             "n_epochs": n_epochs,
             "optim": torch.optim.Adam,
@@ -193,6 +286,7 @@ def create_train_config_regression(
         },
         "NIG_inner_reg": {
             "model": NIGNN,
+            "ensemble": NIGEnsemble,
             "loss": inner_loss_der(lambda_reg=lambda_reg, reg_type=reg_type),
             "n_epochs": n_epochs,
             "optim": torch.optim.Adam,
@@ -212,9 +306,17 @@ def create_train_config_classification(
     reg_type: str = "kl",
     ensemble_size: int = 100,
     ensemble_size_secondary: int = 1,
+    hidden_dim: int = 50,
+    n_hidden_layers: int = 1,
+    output_dim: int = 1,
 ):
+    model_config = create_model_config(
+        hidden_dim=hidden_dim, n_hidden_layers=n_hidden_layers, output_dim=output_dim
+    )
     train_config_classification = {
         "Bernoulli": {
+            "model_config": model_config["Bernoulli"],
+            "ensemble": Ensemble,
             "loss": torch.nn.BCELoss(),
             "n_epochs": n_epochs,
             "optim": torch.optim.Adam,
@@ -223,6 +325,8 @@ def create_train_config_classification(
             "ensemble_size": ensemble_size,
         },
         "Beta_outer": {
+            "model_config": model_config["Beta"],
+            "ensemble": BetaEnsemble,
             "loss": outer_bce_loss(lambda_reg=0.0),
             "n_epochs": n_epochs,
             "optim": torch.optim.Adam,
@@ -231,6 +335,8 @@ def create_train_config_classification(
             "ensemble_size": ensemble_size_secondary,
         },
         "Beta_outer_reg": {
+            "model_config": model_config["Beta"],
+            "ensemble": BetaEnsemble,
             "loss": outer_bce_loss(lambda_reg=lambda_reg, reg_type=reg_type),
             "n_epochs": n_epochs,
             "optim": torch.optim.Adam,
@@ -239,6 +345,8 @@ def create_train_config_classification(
             "ensemble_size": ensemble_size_secondary,
         },
         "Beta_inner": {
+            "model_config": model_config["Beta"],
+            "ensemble": BetaEnsemble,
             "loss": inner_bce_loss(lambda_reg=0.0),
             "n_epochs": n_epochs,
             "optim": torch.optim.Adam,
@@ -247,6 +355,8 @@ def create_train_config_classification(
             "ensemble_size": ensemble_size_secondary,
         },
         "Beta_inner_reg": {
+            "model_config": model_config["Beta"],
+            "ensemble": BetaEnsemble,
             "loss": inner_bce_loss(lambda_reg=0.1, reg_type=reg_type),
             "n_epochs": n_epochs,
             "optim": torch.optim.Adam,

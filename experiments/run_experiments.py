@@ -10,8 +10,9 @@ import torch
 import matplotlib.pyplot as plt
 
 from epuc.datasets import create_evaluation_data
-from epuc.helpers.ensemble import Ensemble, GaussianEnsemble, NIGEnsemble, BetaEnsemble
-from epuc.configs import model_config, data_config, create_train_config
+
+# from epuc.helpers.ensemble import Ensemble, GaussianEnsemble, NIGEnsemble, BetaEnsemble
+from epuc.configs import data_config, create_train_config
 from epuc.uncertainty import (
     get_upper_lower_bounds_normal,
     get_upper_lower_bounds_empirical,
@@ -53,7 +54,7 @@ def _main_simulation(
     mean_params: bool
         whether to return the mean outputs per training epoch
     """
-    
+
     if not exp_name:
         exp_name = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
@@ -69,7 +70,10 @@ def _main_simulation(
         json.dump(temp_dict, outfile)
 
     dataset, x_eval, y_eval, x_train, y_targets = create_evaluation_data(
-        problem_type=type, data_type=data_type, n_eval_points=1000
+        data_config=data_config,
+        problem_type=type,
+        data_type=data_type,
+        n_eval_points=1000,
     )
 
     train_config = create_train_config(type=type, **temp_dict)
@@ -78,31 +82,11 @@ def _main_simulation(
 
     for ens_type in train_config.keys():
         results_per_ens_dict[ens_type] = {}
-        if type == "regression":
-            if ens_type == "Normal":
-                ensemble = GaussianEnsemble(
-                    model_config=model_config["Normal"],
-                    ensemble_size=train_config[ens_type]["ensemble_size"],
-                )
-            else:
-                ensemble = NIGEnsemble(
-                    model_config=model_config["NormalInverseGamma"],
-                    ensemble_size=train_config[ens_type]["ensemble_size"],
-                )
-        elif type == "classification":
-            if ens_type == "Bernoulli":
-                ensemble = Ensemble(
-                    model_config=model_config["Bernoulli"],
-                    ensemble_size=train_config[ens_type]["ensemble_size"],
-                )
-            else:
-                ensemble = BetaEnsemble(
-                    model_config=model_config["Beta"],
-                    ensemble_size=train_config[ens_type]["ensemble_size"],
-                )
-        else:
-            raise NotImplementedError
 
+        ensemble = train_config[ens_type]["ensemble"](
+            model_config=train_config[ens_type]["model_config"],
+            ensemble_size=train_config[ens_type]["ensemble_size"],
+        )
         ensemble.train(
             dataset=dataset,
             data_params=data_config[type][data_type],
@@ -111,7 +95,6 @@ def _main_simulation(
             x_eval=x_eval,
         )
         if return_mean_params:
-
             for key in ensemble.dict_mean_params.keys():
                 results_per_ens_dict[ens_type][key] = ensemble.dict_mean_params[key]
 
@@ -240,7 +223,7 @@ def _main_simulation(
             y_targets=y_targets,
             y_eval=y_eval,
             figsize=figsize,
-            plot_mean_params=return_mean_params
+            plot_mean_params=return_mean_params,
         )
     elif type == "regression":
         if return_mean_params:
@@ -256,7 +239,7 @@ def _main_simulation(
             y_eval=y_eval,
             eps_std=eps_std,
             figsize=figsize,
-            plot_mean_params=return_mean_params
+            plot_mean_params=return_mean_params,
         )
 
     # save plot in same folder
@@ -270,7 +253,10 @@ if __name__ == "__main__":
     parser.add_argument("--type", dest="type", type=str, default="regression")
     parser.add_argument("--exp_name", default=None, type=str)
     parser.add_argument("--data_type", dest="data_type", type=str, required=True)
-    parser.add_argument("--return_mean_params", dest="return_mean_params", type=bool, default=False)
+    parser.add_argument(
+        "--return_mean_params", dest="return_mean_params", type=bool, default=False
+    )
+
     args = parser.parse_args()
     _main_simulation(
         config_dir=args.config_dir,
