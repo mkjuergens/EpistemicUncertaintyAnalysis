@@ -191,7 +191,7 @@ data_config = {
             "x_min": 0.0,
             "x_max": 1.0,
             "x_split": 0.5,
-            "sine_factor": 2.0,
+            "sine_factor": 1.0,
             "amplitude": 0.8,
         },
         "linear": {
@@ -285,7 +285,7 @@ def create_train_config_regression(
             "ensemble_size": ensemble_size_secondary,
         },
         "NIG_inner_reg": {
-            "model": NIGNN,
+            "model_config": model_config["NormalInverseGamma"],
             "ensemble": NIGEnsemble,
             "loss": inner_loss_der(lambda_reg=lambda_reg, reg_type=reg_type),
             "n_epochs": n_epochs,

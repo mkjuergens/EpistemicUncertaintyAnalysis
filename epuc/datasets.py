@@ -161,6 +161,7 @@ class SineRegressionDataset(Dataset):
         self.n_samples = n_samples_1 + n_samples_2
         self.sine_factor = sine_factor
         self.split = x_split
+        self.eps_std = eps_std
         # instances within range of first interval
         self.x_inst_in = torch.from_numpy(
             np.random.uniform(x_min, x_split, n_samples_1)

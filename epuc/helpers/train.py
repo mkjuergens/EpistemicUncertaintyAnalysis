@@ -7,7 +7,6 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from epuc.models import PredictorModel, RegressorModel, BetaNN
 
-
 def stack_output(output: Optional[torch.tensor]):
 
     if isinstance(output, (list, tuple)):
@@ -22,6 +21,7 @@ def train_model(
     optim,
     return_loss: bool = False,
     return_params: bool = False,
+    return_mean_entropy: bool = False,
     x_eval: Optional[torch.tensor] = None,
     device: str = "cuda",
     **kwargs
@@ -84,6 +84,7 @@ def train_model(
             mean_params = preds_out.mean(dim=0)
             for idx in range(len(mean_params)):
                 dict_returns[f'param_{idx}'].append(mean_params[idx].item())
+
 
     return model if not dict_returns else (model, dict_returns)
 
