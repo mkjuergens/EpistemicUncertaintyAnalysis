@@ -186,7 +186,7 @@ model_config = {
 data_config = {
     "classification": {
         "sine": {
-            "n_samples_1": 500,
+            "n_samples_1": 1000,
             "n_samples_2": 0,
             "x_min": 0.0,
             "x_max": 1.0,
