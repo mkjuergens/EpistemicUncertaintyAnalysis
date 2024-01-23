@@ -101,6 +101,8 @@ class Ensemble:
         torch.Tensor
             tensor containing the ensemble predictions
         """
+        # put tensor on device
+        x = x.to(self.device)
         preds = [model(x) for model in self.models]
         if isinstance(preds[0], torch.Tensor):
             # back on cpu if on gpu
