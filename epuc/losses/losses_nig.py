@@ -126,7 +126,7 @@ def inner_nig_loss(params: list, y: torch.tensor):
     float
         loss
     """
-    gamma, nu, alpha, beta = params
+    gamma, nu, alpha, beta = params[0], params[1], params[2], params[3]
 
     omega = 2 * beta * (1 + nu)
     # log terms
@@ -158,7 +158,7 @@ def outer_nig_loss(params: list, y: torch.tensor):
     float
         loss
     """
-    gamma, nu, alpha, beta = params
+    gamma, nu, alpha, beta = params[0], params[1], params[2], params[3]
 
     loss = -0.5 * (
         (-alpha / beta) * (y - gamma) ** 2
