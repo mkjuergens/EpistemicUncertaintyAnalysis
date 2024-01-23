@@ -30,9 +30,10 @@ plt.style.use("seaborn-v0_8")
 
 def _main_simulation(
     config_dir,
+    ens_type: Optional[str] = None,
     type: str = "regression",
     data_type: str = "polynomial",
-    exp_name: Optional[str] = None,
+    exp_name: Optional[list] = None,
     save_dir: str = "results",
     return_mean_params: bool = False,
     return_std_params: bool = False,
@@ -45,6 +46,8 @@ def _main_simulation(
     ----------
     config_dir : str
         directory where
+    ens_type: str, Optional
+        type of ensemble that is to be trained. If None, every ensemble in the config
     type : str, optional
         type of the experiment, by default "regression"
     data_type : str, optional
@@ -53,7 +56,7 @@ def _main_simulation(
         _description_, by default PolynomialDataset
     exp_name : Optional[str], optional
         _description_, by default None
-    mean_params: bool
+    return_mean_params: bool
         whether to return the mean outputs per training epoch
     """
 
@@ -82,7 +85,11 @@ def _main_simulation(
 
     results_per_ens_dict = {}
 
-    for ens_type in train_config.keys():
+    if ens_type:
+        keys = list(ens_type)
+    else:
+        keys = train_config.keys()
+    for ens_type in keys:
         # crate dictionary for each ensemble type
         results = {}
         #results = {}
@@ -273,10 +280,12 @@ if __name__ == "__main__":
         "--return_std_params", dest="return_std_params", type=bool, default=True
     )
     parser.add_argument("--plot_results", dest="plot_results", type=bool, default=True)
+    parser.add_argument("--ens_type", nargs="*", dest="ens_type", default=None)
 
     args = parser.parse_args()
     _main_simulation(
         config_dir=args.config_dir,
+        ens_type=args.ens_type,
         type=args.type,
         data_type=args.data_type,
         save_dir=args.save_dir,
