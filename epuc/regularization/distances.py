@@ -137,8 +137,9 @@ def kl_divergence_beta(beta_params: list):
     """
 
     alpha, beta = beta_params
+    device = alpha.get_device() if alpha.get_device() >= 0 else "cpu"
     assert alpha.shape == beta.shape, "alpha and beta must have the same shape"
-    beta_p = torch.zeros(alpha.shape[0], 2)
+    beta_p = torch.zeros(alpha.shape[0], 2).to(device)
     beta_p[:, 0] = alpha.squeeze()
     beta_p[:, 1] = beta.squeeze()
 
@@ -146,7 +147,7 @@ def kl_divergence_beta(beta_params: list):
     # for every parameter pair
     kl_div = torch.stack(
         [
-            kl_divergence_dirichlet_torch(x_i, torch.ones(2))
+            kl_divergence_dirichlet_torch(x_i, torch.ones(2).to(device))
             for x_i in torch.unbind(beta_p, dim=0)
         ],
         dim=0,
