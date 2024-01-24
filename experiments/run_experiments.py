@@ -164,7 +164,7 @@ def _main_simulation(
                 )
                 # results["mean_sigmas"] = mean_params[:, 1]
                 results["pred_mus"] = preds[:, :, 0]
-                results[ens_type]["pred_sigmas2"] = preds[:, :, 1] ** 2
+                results["pred_sigmas2"] = preds[:, :, 1] ** 2
 
                 # confidence bounds
                 lower_mu, upper_mu = get_upper_lower_bounds_normal(
