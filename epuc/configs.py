@@ -182,6 +182,63 @@ model_config = {
         },
     },
 }
+def create_data_config(n_samples: int = 1000):
+    """creates the data configuration for the specific problem given the data parameters.
+
+    Parameters
+    ----------
+    n_samples : int, optional
+        number of data points, by default 1000
+    data_type : str, optional
+        type of data, by default "sine". Options are {"sine", "linear", "polynomial"}
+
+    Returns
+    -------
+    dict
+        dictionary with parameters for each experiment
+
+    """
+    data_config = {
+    "classification": {
+        "sine": {
+            "n_samples_1": n_samples,
+            "n_samples_2": 0,
+            "x_min": 0.0,
+            "x_max": 1.0,
+            "x_split": 0.5,
+            "sine_factor": 1.0,
+            "amplitude": 0.8,
+        },
+        "linear": {
+            "n_samples_1": n_samples,
+            "n_samples_2": 0,
+            "x_min": 0.0,
+            "x_max": 1.0,
+            "x_split": 0.5,
+            "slope": -1.0,
+            "intercept": 1.0,
+        },
+    },
+    "regression": {
+        "sine": {
+            "n_samples_1": n_samples,
+            "n_samples_2": 10,
+            "x_min": 0.0,
+            "x_max": 1.0,
+            "x_split": 0.5,
+            "eps_std": 0.03,
+            "sine_factor": 2.0,
+        },
+        "polynomial": {
+            "n_samples": n_samples,
+            "x_min": -4,
+            "x_max": 4,
+            "degree": 3,
+            "eps_std": 3,
+        },
+    },
+    }
+    return data_config
 
 data_config = {
     "classification": {
@@ -367,3 +424,7 @@ def create_train_config_classification(
     }
 
     return train_config_classification
+
+if __name__ == "__main__":
+    conf_reg = create_train_config_regression()
+    print(conf_reg.keys())

@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from epuc.datasets import create_evaluation_data
 
 # from epuc.helpers.ensemble import Ensemble, GaussianEnsemble, NIGEnsemble, BetaEnsemble
-from epuc.configs import data_config, create_train_config
+from epuc.configs import create_train_config, create_data_config
 from epuc.uncertainty import (
     get_upper_lower_bounds_normal,
     get_upper_lower_bounds_empirical,
@@ -30,6 +30,7 @@ plt.style.use("seaborn-v0_8")
 
 def _main_simulation(
     config_dir,
+    n_samples: int,
     ens_type: Optional[str] = None,
     type: str = "regression",
     data_type: str = "polynomial",
@@ -66,6 +67,7 @@ def _main_simulation(
     # load json file located in the config_dir directory into a dictionary
     with open(config_dir) as json_file:
         temp_dict = json.load(json_file)
+        temp_dict["n_samples"] = n_samples
 
     save_path = f"{save_dir}/" + type + f"/{exp_name}"
     if not os.path.exists(save_path):
@@ -73,6 +75,8 @@ def _main_simulation(
 
     with open(save_path + "/params.json", "w") as outfile:
         json.dump(temp_dict, outfile)
+
+    data_config = create_data_config(n_samples=n_samples)
 
     dataset, x_eval, y_eval, x_train, y_targets = create_evaluation_data(
         data_config=data_config,
@@ -281,10 +285,12 @@ if __name__ == "__main__":
     )
     parser.add_argument("--plot_results", dest="plot_results", type=bool, default=True)
     parser.add_argument("--ens_type", nargs="*", dest="ens_type", default=None)
+    parser.add_argument("--n_samples", dest="n_samples", type=int, default=1000)
 
     args = parser.parse_args()
     _main_simulation(
         config_dir=args.config_dir,
+        n_samples=args.n_samples,
         ens_type=args.ens_type,
         type=args.type,
         data_type=args.data_type,
