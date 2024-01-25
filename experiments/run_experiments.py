@@ -67,6 +67,7 @@ def _main_simulation(
     # load json file located in the config_dir directory into a dictionary
     with open(config_dir) as json_file:
         temp_dict = json.load(json_file)
+        train_config = create_train_config(type=type, **temp_dict)
         temp_dict["n_samples"] = n_samples
 
     save_path = f"{save_dir}/" + type + f"/{exp_name}"
@@ -84,8 +85,6 @@ def _main_simulation(
         data_type=data_type,
         n_eval_points=1000,
     )
-
-    train_config = create_train_config(type=type, **temp_dict)
 
     results_per_ens_dict = {}
 
