@@ -162,3 +162,4 @@ cython_debug/
 
 # adding my own stuff
 experiments/results/
+notebooks/results/
