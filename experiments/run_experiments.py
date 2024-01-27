@@ -6,12 +6,10 @@ import datetime
 import pickle
 
 import numpy as np
-import torch
 import matplotlib.pyplot as plt
 
 from epuc.datasets import create_evaluation_data
 
-# from epuc.helpers.ensemble import Ensemble, GaussianEnsemble, NIGEnsemble, BetaEnsemble
 from epuc.configs import create_train_config, create_data_config
 from epuc.uncertainty import (
     get_upper_lower_bounds_normal,
@@ -24,9 +22,8 @@ from epuc.helpers.plot_functions import (
     plot_gaussian_nig_prediction_intervals,
     plot_bernoulli_beta_prediction_intervals,
 )
-
+from epuc.helpers.parameter_analysis import compute_upper_lower_bounds_ensemble
 plt.style.use("seaborn-v0_8")
-
 
 def _main_simulation(
     config_dir,
@@ -38,7 +35,7 @@ def _main_simulation(
     save_dir: str = "results",
     return_mean_params: bool = False,
     return_std_params: bool = False,
-    plot_results: bool = True
+    plot_results: bool = True,
 ):
     """function for doing the primary-secondary distribution analysis, saving the results in a
     dictionary and plotting it.
@@ -95,7 +92,6 @@ def _main_simulation(
     for ens_type in keys:
         # crate dictionary for each ensemble type
         results = {}
-        #results = {}
 
         ensemble = train_config[ens_type]["ensemble"](
             model_config=train_config[ens_type]["model_config"],
@@ -110,11 +106,11 @@ def _main_simulation(
             x_eval=x_eval,
         )
         if return_mean_params:
-            for key in ensemble.dict_mean_params.keys():
-                results[key] = ensemble.dict_mean_params[key]
+            dict_returns = compute_upper_lower_bounds_ensemble(results_dict=ensemble.dict_mean_params)
+            results["conf_bounds"] = dict_returns
         if return_std_params:
             for key in ensemble.dict_std_params.keys():
-                results[f'{key}_std'] = ensemble.dict_std_params[key]
+                results[f"{key}_std"] = ensemble.dict_std_params[key]
 
         preds = ensemble.predict(x_eval.view(-1, 1)).detach().numpy()
 
@@ -126,7 +122,6 @@ def _main_simulation(
 
         if type == "classification":
             if ens_type == "Bernoulli":
-
                 results["mean_probs"] = mean_params
                 results["pred_probs"] = preds
 
@@ -142,9 +137,10 @@ def _main_simulation(
                 results["pred_alphas"] = preds[:, :, 0]
                 results["pred_betas"] = preds[:, :, 1]
 
-                results["mean_pred_p"] = (
-                    ensemble.predict_mean_p(x_eval.view(-1, 1)).detach().numpy()
-                )
+               # results["mean_pred_p"] = (
+                    #ensemble.predict_mean_p(x_eval.view(-1, 1)).detach().numpy()
+               # ) # TODO: cahnge 
+                results["mean_pred_p"] = mean_params[:, 0]/(mean_params[:, 0] + mean_params[:, 1])
 
                 # confidence bounds
                 lower_p, upper_p = get_upper_lower_bounds_beta(
@@ -159,12 +155,8 @@ def _main_simulation(
 
                 results["mean_mus"] = mean_params[:, 0]
                 # take the square of the standard deviation to get the variance
-                results["mean_sigma2"] = np.mean(
-                    (preds[:, :, 1] ** 2), axis=1
-                )
-                results["mean_sigma"] = np.mean(
-                    preds[:, :, 1], axis=1
-                )
+                results["mean_sigma2"] = np.mean((preds[:, :, 1] ** 2), axis=1)
+                results["mean_sigma"] = np.mean(preds[:, :, 1], axis=1)
                 # results["mean_sigmas"] = mean_params[:, 1]
                 results["pred_mus"] = preds[:, :, 0]
                 results["pred_sigmas2"] = preds[:, :, 1] ** 2
@@ -198,12 +190,8 @@ def _main_simulation(
                 results["pred_alphas"] = preds[:, :, 2]
                 results["pred_betas"] = preds[:, :, 3]
 
-                results[
-                    "mean_pred_mu"
-                ] = mean_mu.detach().numpy()
-                results[
-                    "mean_pred_sigma2"
-                ] = mean_sigma2.detach().numpy()
+                results["mean_pred_mu"] = mean_mu.detach().numpy()
+                results["mean_pred_sigma2"] = mean_sigma2.detach().numpy()
 
                 # confidence bounds
                 lower_mu, upper_mu = get_upper_lower_bounds_normal(
@@ -226,8 +214,10 @@ def _main_simulation(
                 # save results dict
         results_per_ens_dict[ens_type] = results
         with open(save_path + f"/results_{ens_type}.pkl", "wb") as f:
-                    pickle.dump(results, f)
-
+            pickle.dump(results, f)
+    #add training data to results dict
+    results_per_ens_dict["x_train"] = x_train
+    results_per_ens_dict["y_targets"] = y_targets
     # save end results in a pickle file
     with open(save_path + "/results_per_ens_dict.pkl", "wb") as f:
         pickle.dump(results_per_ens_dict, f)

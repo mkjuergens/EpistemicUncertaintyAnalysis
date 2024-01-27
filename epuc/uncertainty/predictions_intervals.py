@@ -130,6 +130,9 @@ if __name__ == "__main__":
     print(quantile)
     lower, upper = get_upper_lower_bounds_normal(0.975, 6, 2)
     print(lower, upper)
+    x = np.random.randn(1, 10)
+    lower, upper = get_upper_lower_bounds_empirical(0.95, x)
+    print(lower, upper)
 
 
 

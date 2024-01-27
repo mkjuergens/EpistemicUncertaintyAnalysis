@@ -50,7 +50,9 @@ class Ensemble:
         """
         print(f"Training {self.ensemble_size} models on {self.device}.")
         if return_mean_params:
+            # dictionary for each ensemble member
             ensemble_dicts = [defaultdict(list) for _ in range(self.ensemble_size)]
+
         for i, model in enumerate(tqdm(self.models)):
             dataset_train = dataset(**data_params)
             data_loader = torch.utils.data.DataLoader(
@@ -78,13 +80,14 @@ class Ensemble:
             for k in ensemble_dicts[0].keys():
                 self.dict_mean_params[k] = torch.stack(
                     [torch.tensor(d[k]) for d in ensemble_dicts], axis=0
-                ).mean(axis=0)
+                )# TODO: check what it does here?
+
         if return_std_params:
+            # ersturn standard deviation betweeen meab predictions of ensemble members
             for k in ensemble_dicts[0].keys():
                 self.dict_std_params[k] = torch.stack(
                     [torch.tensor(d[k]) for d in ensemble_dicts], axis=0
                 ).std(axis=0)
-
 
 
     def predict(self, x):
@@ -227,7 +230,7 @@ class BetaEnsemble(Ensemble):
     def predict_mean_p(self, x):
         preds = self.predict(x)
         pred_means = preds[:, :, 0] / (preds[:, :, 0] + preds[:, :, 1])
-        return pred_means.mean(axis=1)
+        return pred_means # TODO: CHECK: do not take mean over predictions, this fucks things up
 
 
 if __name__ == "__main__":

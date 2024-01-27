@@ -74,6 +74,7 @@ def train_model(
             optimizer.step()
         if return_loss:
             dict_returns['loss'].append(loss_epoch / len(dataloader))
+            
         if return_params:
             # TODO: calculate average of outputs for each output of the model
             assert x_eval is not None, "x_eval must be provided if return_params is True"
@@ -83,6 +84,7 @@ def train_model(
                 preds_out = torch.stack(preds_out, axis=1)
             mean_params = preds_out.mean(dim=0)
             for idx in range(len(mean_params)):
+                # return mean of predicted parameters over instance space
                 dict_returns[f'param_{idx}'].append(mean_params[idx].item())
 
 

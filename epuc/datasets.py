@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import Dataset
 
 
-def sine_fct_prediction(x, freq: float = 0.5, amplitude: float = 0.8):
+def sine_fct_prediction(x, freq: float = 1.0, amplitude: float = 0.8):
     pred_fct = lambda x: 0.5 * (amplitude * np.sin(2 * np.pi * freq * x) + 1)
     return pred_fct(x)
 
@@ -32,10 +32,10 @@ class BernoulliSineDataset(Dataset):
     def __init__(
         self,
         n_samples_1: int,
-        n_samples_2: int,
-        sine_factor: int = 0.5,
+        n_samples_2: int = 0,
+        sine_factor: int = 1.0,
         amplitude: float = 0.8,
-        x_min: float = 1.0,
+        x_min: float = 0.0,
         x_max: float = 1.0,
         x_split: float = 0.5,
     ):
@@ -51,7 +51,7 @@ class BernoulliSineDataset(Dataset):
         sine_factor : int, optional
             frequency of the sine function, by default 5
         x_min : float, optional
-            lower bvound of the instance values, by default 1.0
+            lower bound of the instance values, by default 1.0
         x_max : float, optional
             upper bound of the instance values, by default 1.0
         x_split : float, optional
