@@ -23,7 +23,9 @@ from epuc.helpers.plot_functions import (
     plot_bernoulli_beta_prediction_intervals,
 )
 from epuc.helpers.parameter_analysis import compute_upper_lower_bounds_ensemble
+
 plt.style.use("seaborn-v0_8")
+
 
 def _main_simulation(
     config_dir,
@@ -35,6 +37,8 @@ def _main_simulation(
     save_dir: str = "results",
     return_mean_params: bool = False,
     return_std_params: bool = False,
+    return_losses: bool = False,
+    resample_train_data: bool = True,
     plot_results: bool = True,
 ):
     """function for doing the primary-secondary distribution analysis, saving the results in a
@@ -56,6 +60,14 @@ def _main_simulation(
         _description_, by default None
     return_mean_params: bool
         whether to return the mean outputs per training epoch
+    return_std_params: bool
+        whether to return the standard deviation of the outputs per training epoch
+    resturn_losses: bool
+        whether to return the losses per training epoch (of each ensemble member)
+    resample_train_data : bool, optional
+        whether to resample the training data for each ensemble member, by default True
+    plot_results : bool, optional
+        whether to plot the results, by default True
     """
 
     if not exp_name:
@@ -103,17 +115,21 @@ def _main_simulation(
             train_params=train_config[ens_type],
             return_mean_params=return_mean_params,
             return_std_params=return_std_params,
+            resample_train_data=resample_train_data,
             x_eval=x_eval,
         )
         if return_mean_params:
-            dict_returns = compute_upper_lower_bounds_ensemble(results_dict=ensemble.dict_mean_params)
+            dict_returns = compute_upper_lower_bounds_ensemble(
+                results_dict=ensemble.dict_mean_params
+            )
             results["conf_bounds"] = dict_returns
         if return_std_params:
             for key in ensemble.dict_std_params.keys():
                 results[f"{key}_std"] = ensemble.dict_std_params[key]
+        if return_losses:
+            results["losses"] = ensemble.dict_losses
 
         preds = ensemble.predict(x_eval.view(-1, 1)).detach().numpy()
-
         # get mean and standard deviation of both mu and sigma predictions TODO: will probably need to be customized!
         mean_params = ensemble.predict_mean(x_eval.view(-1, 1)).detach().numpy()
 
@@ -137,10 +153,12 @@ def _main_simulation(
                 results["pred_alphas"] = preds[:, :, 0]
                 results["pred_betas"] = preds[:, :, 1]
 
-               # results["mean_pred_p"] = (
-                    #ensemble.predict_mean_p(x_eval.view(-1, 1)).detach().numpy()
-               # ) # TODO: cahnge 
-                results["mean_pred_p"] = mean_params[:, 0]/(mean_params[:, 0] + mean_params[:, 1])
+                # results["mean_pred_p"] = (
+                # ensemble.predict_mean_p(x_eval.view(-1, 1)).detach().numpy()
+                # ) # TODO: cahnge
+                results["mean_pred_p"] = mean_params[:, 0] / (
+                    mean_params[:, 0] + mean_params[:, 1]
+                )
 
                 # confidence bounds
                 lower_p, upper_p = get_upper_lower_bounds_beta(
@@ -215,7 +233,7 @@ def _main_simulation(
         results_per_ens_dict[ens_type] = results
         with open(save_path + f"/results_{ens_type}.pkl", "wb") as f:
             pickle.dump(results, f)
-    #add training data to results dict
+    # add training data to results dict
     results_per_ens_dict["x_train"] = x_train
     results_per_ens_dict["y_targets"] = y_targets
     # save end results in a pickle file
@@ -275,8 +293,15 @@ if __name__ == "__main__":
     parser.add_argument("--plot_results", dest="plot_results", type=bool, default=True)
     parser.add_argument("--ens_type", nargs="*", dest="ens_type", default=None)
     parser.add_argument("--n_samples", dest="n_samples", type=int, default=1000)
+    parser.add_argument(
+        "--return_losses", dest="return_losses", type=bool, default=False
+    )
+    parser.add_argument(
+        "--resample_train_data", dest="resample_train_data", type=bool, default=True
+    )
 
     args = parser.parse_args()
+
     _main_simulation(
         config_dir=args.config_dir,
         n_samples=args.n_samples,
@@ -287,4 +312,6 @@ if __name__ == "__main__":
         exp_name=args.exp_name,
         return_mean_params=args.return_mean_params,
         return_std_params=args.return_std_params,
+        return_losses=args.return_losses,
+        resample_train_data=args.resample_train_data,
     )

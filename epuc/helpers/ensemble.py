@@ -35,6 +35,7 @@ class Ensemble:
         train_params: dict,
         return_mean_params: bool = False,
         return_std_params: bool = False,
+        resample_train_data: bool = True,
         x_eval: Optional[torch.tensor] = None,
     ):
         """train an ensemble of models based on the same (resampled) dataset.
@@ -47,14 +48,26 @@ class Ensemble:
             dictionary containing the parameters for the dataset
         train_params : dict
             dictionary containing the parameters for training
+        return_mean_params : bool, optional
+            whether to return the mean parameters of the ensemble (per epoch), by default False
+        return_std_params : bool, optional
+            whether to return the standard deviation of the ensemble parameters (per epoch),
+            by default False
+        resample_train_data : bool, optional
+            whether to resample the training data for each ensemble member, by default True
+        x_eval : torch.tensor, optional
+            tensor of instances to evaluate the model on, by default None
         """
         print(f"Training {self.ensemble_size} models on {self.device}.")
         if return_mean_params:
             # dictionary for each ensemble member
             ensemble_dicts = [defaultdict(list) for _ in range(self.ensemble_size)]
 
+        dataset_train = dataset(**data_params)
         for i, model in enumerate(tqdm(self.models)):
-            dataset_train = dataset(**data_params)
+            if resample_train_data:
+                # resample the training data for each ensemble member
+                dataset_train = dataset(**data_params)
             data_loader = torch.utils.data.DataLoader(
                 dataset_train, batch_size=train_params["batch_size"], shuffle=True
             )
@@ -65,7 +78,7 @@ class Ensemble:
                 n_epochs=train_params["n_epochs"],
                 optim=train_params["optim"],
                 return_loss=True,
-                return_params=return_mean_params,
+                return_params=return_mean_params, 
                 x_eval=x_eval,
                 device=self.device,
                 **train_params["optim_kwargs"],
@@ -75,7 +88,7 @@ class Ensemble:
                 ensemble_dicts[i] = {
                     k: dict_returns[k] for k in dict_returns.keys() if k != "loss"
                 }
-        # now average the list of dictionaries in ensemble_dicts to get one list per key
+        # now average the list of dictionaries in ensemble_dicts to get one list per key    
         if return_mean_params:
             for k in ensemble_dicts[0].keys():
                 self.dict_mean_params[k] = torch.stack(
