@@ -1,3 +1,4 @@
+from typing import Optional
 import numpy as np
 import torch
 
@@ -220,12 +221,18 @@ def create_evaluation_data(
     problem_type: str = "regression",
     data_type: str = "polynomial",
     n_eval_points: int = 1000,
+    range_x_eval: Optional[tuple] = None,
 ):
     if problem_type == "regression":
         if data_type == "polynomial":
             dataset = PolynomialDataset
             dataset_eval = dataset(**data_config["regression"][data_type])
-            x_eval = torch.from_numpy(np.linspace(-6, 6, n_eval_points)).float()
+            if range_x_eval is not None:
+                x_eval = torch.from_numpy(
+                    np.linspace(range_x_eval[0], range_x_eval[1], n_eval_points)
+                ).float()
+            else:
+                x_eval = torch.from_numpy(np.linspace(-6, 6, n_eval_points)).float()
             y_eval = polynomial_fct(
                 x_eval, degree=data_config["regression"][data_type]["degree"]
             )
@@ -249,7 +256,13 @@ def create_evaluation_data(
         if data_type == "sine":
             dataset = BernoulliSineDataset
             dataset_eval = dataset(**data_config["classification"][data_type])
-            x_eval = torch.from_numpy(np.linspace(0, 1, n_eval_points)).float()
+            if range_x_eval is not None:
+                x_eval = torch.from_numpy(
+                    np.linspace(range_x_eval[0], range_x_eval[1], n_eval_points)
+                ).float()
+            else:
+                x_eval = torch.from_numpy(np.linspace(0, 1, n_eval_points)).float()
+            x_eval = torch.from_numpy(np.linspace(0,  1, n_eval_points)).float()
             y_eval = sine_fct_prediction(
                 x_eval, freq=data_config["classification"][data_type]["sine_factor"]
             )

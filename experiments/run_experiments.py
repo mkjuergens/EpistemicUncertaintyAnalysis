@@ -39,6 +39,7 @@ def _main_simulation(
     return_std_params: bool = False,
     return_losses: bool = False,
     resample_train_data: bool = True,
+    range_x_eval: Optional[tuple] = None,
     plot_results: bool = True,
 ):
     """function for doing the primary-secondary distribution analysis, saving the results in a
@@ -93,6 +94,7 @@ def _main_simulation(
         problem_type=type,
         data_type=data_type,
         n_eval_points=1000,
+        range_x_eval=range_x_eval,
     )
 
     results_per_ens_dict = {}
@@ -299,6 +301,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--resample_train_data", dest="resample_train_data", type=bool, default=True
     )
+    parser.add_argument(
+        "--range_x_eval", nargs="+", type=float, dest="range_x_eval",  default=None
+    )
 
     args = parser.parse_args()
 
@@ -314,4 +319,5 @@ if __name__ == "__main__":
         return_std_params=args.return_std_params,
         return_losses=args.return_losses,
         resample_train_data=args.resample_train_data,
+        range_x_eval=args.range_x_eval,
     )
