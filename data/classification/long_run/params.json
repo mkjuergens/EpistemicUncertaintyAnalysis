@@ -1,0 +1,1 @@
+{"lambda_reg": 1.0, "n_epochs": 15000, "lr": 0.001, "batch_size": 128, "reg_type": "kl", "ensemble_size": 40, "ensemble_size_secondary": 40, "hidden_dim": 32, "n_hidden_layers": 2, "output_dim": 1, "n_samples": 1000}

@@ -1,0 +1,1 @@
+{"lambda_reg": 0.01, "n_epochs": 10000, "lr": 0.0005, "batch_size": 64, "reg_type": "entropy", "ensemble_size": 100, "ensemble_size_secondary": 1, "hidden_dim": 32, "n_hidden_layers": 1, "n_samples": 100}
