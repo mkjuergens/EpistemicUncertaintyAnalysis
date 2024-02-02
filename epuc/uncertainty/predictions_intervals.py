@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import stats
 
+
 def normal_quantile(p: float, mu: float | np.ndarray, sigma: float | np.ndarray):
     """calculates the quantile function for a normal distribution with mean mu,
     standard deviation sigma, for a given value p.
@@ -21,6 +22,7 @@ def normal_quantile(p: float, mu: float | np.ndarray, sigma: float | np.ndarray)
     """
 
     return stats.norm.ppf(q=p, loc=mu, scale=sigma)
+
 
 def get_upper_lower_bounds_normal(p: float, mu: np.ndarray, sigma: np.ndarray):
     """calculate the upper and lower bounds of a prediction interval for a normal
@@ -49,7 +51,7 @@ def get_upper_lower_bounds_normal(p: float, mu: np.ndarray, sigma: np.ndarray):
 
 
 def get_upper_lower_bounds_empirical(p: float, y: np.ndarray):
-    """calculate the (empirical) upper and lower bounds of a prediction interval, given the predictions of a set 
+    """calculate the (empirical) upper and lower bounds of a prediction interval, given the predictions of a set
     of models.
 
     Parameters
@@ -90,11 +92,12 @@ def get_upper_lower_bounds_inv_gamma(p: float, alpha: np.ndarray, beta: np.ndarr
 
     tail_prob = (1 - p) / 2
 
-    # calculate quantiles 
+    # calculate quantiles
     lower_bound = stats.invgamma.ppf(tail_prob, alpha, scale=beta)
     upper_bound = stats.invgamma.ppf(1 - tail_prob, alpha, scale=beta)
 
     return lower_bound, upper_bound
+
 
 def get_upper_lower_bounds_beta(p: float, alpha: np.ndarray, beta: np.ndarray):
     """calculate the upper and lower bounds of a prediction interval for a beta distribution
@@ -122,10 +125,11 @@ def get_upper_lower_bounds_beta(p: float, alpha: np.ndarray, beta: np.ndarray):
 
     return lower_bound, upper_bound
 
+
 if __name__ == "__main__":
     p = 0.975
-    mu = np.array([0, 0.5, .5])
-    sigma = np.array([2.0,2.0,3.0])
+    mu = np.array([0, 0.5, 0.5])
+    sigma = np.array([2.0, 2.0, 3.0])
     quantile = normal_quantile(p=p, mu=mu, sigma=sigma)
     print(quantile)
     lower, upper = get_upper_lower_bounds_normal(0.975, 6, 2)
@@ -133,7 +137,3 @@ if __name__ == "__main__":
     x = np.random.randn(1, 10)
     lower, upper = get_upper_lower_bounds_empirical(0.95, x)
     print(lower, upper)
-
-
-
-
