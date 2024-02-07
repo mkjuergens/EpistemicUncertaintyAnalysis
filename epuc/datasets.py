@@ -262,7 +262,7 @@ def create_evaluation_data(
                 ).float()
             else:
                 x_eval = torch.from_numpy(np.linspace(0, 1, n_eval_points)).float()
-            x_eval = torch.from_numpy(np.linspace(0,  1, n_eval_points)).float()
+            x_eval = torch.from_numpy(np.linspace(0, 1, n_eval_points)).float()
             y_eval = sine_fct_prediction(
                 x_eval, freq=data_config["classification"][data_type]["sine_factor"]
             )
