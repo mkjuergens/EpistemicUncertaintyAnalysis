@@ -29,6 +29,14 @@ def generate_bernoulli_labels(x_inst: np.ndarray, fct_pred):
     return labels, preds
 
 
+def generate_noise(x_inst, n_samples: int, std: float, heteroscedastic: bool = False):
+    if heteroscedastic:
+        eps = torch.normal(torch.zeros(n_samples), std * torch.abs(x_inst))
+    else:
+        eps = torch.normal(torch.zeros(n_samples), std)
+    return eps
+
+
 class BernoulliSineDataset(Dataset):
     def __init__(
         self,
@@ -194,7 +202,27 @@ class PolynomialDataset(Dataset):
         x_min: int = -4,
         x_max: int = 4,
         eps_std: float = 3.0,
+        heteroscedastic: bool = False,
     ):
+        """dataset fore regression, where the target values follow a polynomial function of a given
+          degree, with some added noise:
+                y_i = x_i^degree + eps_i, eps_i ~ N(0, eps_std^2)
+
+        Parameters
+        ----------
+        n_samples : int
+           number of samples
+        degree : int, optional
+            _description_, by default 3
+        x_min : int, optional
+            _description_, by default -4
+        x_max : int, optional
+            _description_, by default 4
+        eps_std : float, optional
+            standard deviation of the Gaussian noise, by default 3.0
+        heteroscedastic : bool, optional
+            whether to make the noise heteroscedastic, by default False
+        """
         super().__init__()
         self.n_samples = n_samples
         self.degree = degree

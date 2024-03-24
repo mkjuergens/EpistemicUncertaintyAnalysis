@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 from typing import Optional
 
@@ -5,7 +6,7 @@ import torch
 from tqdm import tqdm
 from epuc.helpers.train import train_model
 from epuc.models import create_model
-from epuc.datasets import SineRegressionDataset
+from epuc.datasets import SineRegressionDataset, PolynomialDataset
 
 
 class Ensemble:
@@ -27,6 +28,7 @@ class Ensemble:
         self.dict_std_params = {}
         self.dict_losses = {}
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model_name = model_config["model"].__name__ # for saving models
 
     def train(
         self,
@@ -142,6 +144,14 @@ class Ensemble:
         # predict mean over ensemble members
         return preds.std(dim=1)
 
+    # add method to save models
+    def save_models(self, path):
+        # create directory if it does not exist
+        for i, model in enumerate(self.models):
+            torch.save(model.state_dict(), path + f"/model_{i}.pkl")
+            # save loss for each model
+            torch.save(self.dict_losses[i], path + f"/loss_{i}.pkl")
+
 
 class GaussianEnsemble(Ensemble):
     """Ensmeble of models which predict a Gaussian distribution, that is, the mean and standard
@@ -247,11 +257,12 @@ class BetaEnsemble(Ensemble):
 
 
 if __name__ == "__main__":
-    from epuc.configs import model_config, data_config, train_config
+    from epuc.configs import create_train_config, create_model_config, create_data_config
+    ensemble = Ensemble(model_config=create_model_config()["Normal"], ensemble_size=2)
 
-    ensemble = Ensemble(model_config["Normal"], ensemble_size=2)
-    data_params = data_config["SineRegression"]
-    train_params = train_config["Normal"]
-    ensemble.train(SineRegressionDataset, data_params, train_params)
+    data_params = create_data_config()["regression"]["polynomial"]
+    train_params = create_train_config()["Normal"]
+    ensemble.train(PolynomialDataset, data_params, train_params)
     x = torch.linspace(0, 1, 100).view(-1, 1)
     preds = ensemble.predict_mean(x)
+    ensemble.save_models(path="./results/")

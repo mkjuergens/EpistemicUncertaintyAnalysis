@@ -126,7 +126,7 @@ def inner_nig_loss(params: list, y: torch.tensor):
     float
         loss
     """
-    device = y.get_device()
+    device = y.device # change from get_device()
     gamma, nu, alpha, beta = params[0], params[1], params[2], params[3]
 
     omega = 2 * beta * (1 + nu)
@@ -160,7 +160,7 @@ def outer_nig_loss(params: list, y: torch.tensor):
         loss
     """
     gamma, nu, alpha, beta = params[0], params[1], params[2], params[3]
-    device = y.get_device()
+    device = y.device
     loss = -0.5 * (
         (-alpha / beta) * (y - gamma) ** 2
         - 1 / nu
