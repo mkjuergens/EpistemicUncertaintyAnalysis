@@ -93,7 +93,7 @@ def _main_training(
             resample_train_data=resample_train_data,
             x_eval=x_eval,
         )
-        save_path_model = save_path + f"/{ens_type}.pkl"
+        save_path_model = save_path + f"/{ens_type}"
         if not os.path.exists(save_path_model):
             os.makedirs(save_path_model)
         ensemble.save_models(save_path_model)
