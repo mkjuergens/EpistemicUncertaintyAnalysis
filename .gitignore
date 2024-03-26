@@ -164,3 +164,6 @@ cython_debug/
 experiments/results/
 notebooks/results/
 notebooks/figures/
+results/
+data/classification/new_simulation/
+data/regression/new_simulation/

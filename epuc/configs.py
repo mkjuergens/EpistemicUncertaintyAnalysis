@@ -7,7 +7,7 @@ from epuc.losses import *
 
 def create_train_config(
     type: str = "regression",
-    lambda_reg: float = 0.1,
+    lambda_reg: list | float = 0.1,
     n_epochs: int = 1000,
     batch_size: int = 128,
     lr: float = 0.001,
@@ -24,8 +24,9 @@ def create_train_config(
     ----------
     type : str, optional
         type of problem, by default "regression". Options are {"regression", "classification"}
-    lambda_reg : float, optional
-        regularization strength, by default 0.1
+    lambda_reg : list or float, optional
+        regularization strength, by default 0.1. If it is a list, different models are trained wit
+        h different lambda values.
     n_epochs : int, optional
         number of epochs , by default 1000
     batch_size : int, optional
@@ -283,7 +284,7 @@ data_config = {
 
 
 def create_train_config_regression(
-    lambda_reg: float = 0.1,
+    lambda_reg: list | float = 0.1,
     n_epochs: int = 1000,
     batch_size: int = 128,
     lr: float = 0.001,
@@ -310,7 +311,29 @@ def create_train_config_regression(
             "optim_kwargs": {"lr": lr},
             "batch_size": batch_size,
             "ensemble_size": ensemble_size,
-        },
+        }
+    }
+    if not isinstance(lambda_reg, list):
+        lambda_reg = [lambda_reg]
+    
+    for reg in lambda_reg:
+        train_config_regression[f"NIG_outer_reg_{reg}"] = create_train_config_NIG(
+            model_config=model_config,
+            loss_fct=outer_loss_der, lambda_reg=reg, reg_type=reg_type, n_epochs=n_epochs,
+            lr=lr, batch_size=batch_size, ensemble_size=ensemble_size_secondary
+        )
+        train_config_regression[f"NIG_inner_reg_{reg}"] = create_train_config_NIG(
+            model_config=model_config,
+            loss_fct=inner_loss_der,
+            lambda_reg=reg,
+            reg_type=reg_type,
+            n_epochs=n_epochs,
+            lr=lr,
+            batch_size=batch_size,
+            ensemble_size=ensemble_size_secondary
+        )
+    
+""""
         "NIG_outer": {
             "model_config": model_config["NormalInverseGamma"],
             "ensemble": NIGEnsemble,
@@ -353,10 +376,10 @@ def create_train_config_regression(
         },
     }
     return train_config_regression
-
+"""
 
 def create_train_config_classification(
-    lambda_reg: float = 0.1,
+    lambda_reg: list | float = 0.1, # change: now also possible to give in list of lambda values
     n_epochs: int = 1000,
     batch_size: int = 128,
     lr: float = 0.001,
@@ -381,6 +404,36 @@ def create_train_config_classification(
             "batch_size": batch_size,
             "ensemble_size": ensemble_size,
         },
+    }
+    if not isinstance(lambda_reg, list):
+        lambda_reg = [lambda_reg]
+
+    for reg in lambda_reg:
+        train_config_classification[f"Beta_outer_reg_{reg}"] = create_train_config_beta(
+            model_config=model_config,
+            loss_fct=outer_bce_loss,
+            lambda_reg=reg,
+            reg_type=reg_type,
+            n_epochs=n_epochs,
+            lr=lr,
+            batch_size=batch_size,
+            ensemble_size=ensemble_size_secondary,
+        )
+        train_config_classification[f"Beta_inner_reg_{reg}"] = create_train_config_beta(
+            model_config=model_config,
+            loss_fct=inner_bce_loss,
+            lambda_reg=reg,
+            reg_type=reg_type,
+            n_epochs=n_epochs,
+            lr=lr,
+            batch_size=batch_size,
+            ensemble_size=ensemble_size_secondary,
+        )
+
+    return train_config_classification
+
+
+    """
         "Beta_outer": {
             "model_config": model_config["Beta"],
             "ensemble": BetaEnsemble,
@@ -422,9 +475,49 @@ def create_train_config_classification(
             "ensemble_size": ensemble_size_secondary,
         },
     }
+    """
 
-    return train_config_classification
+def create_train_config_beta(model_config: dict, loss_fct: callable, lambda_reg: float,
+                             reg_type: str, n_epochs: int, lr: float, batch_size: int,
+                             ensemble_size: int):
+    train_config = {
+        "model_config": model_config["Beta"],
+        "ensemble": BetaEnsemble,
+        "loss": loss_fct(lambda_reg=lambda_reg, reg_type=reg_type),
+        "n_epochs": n_epochs,
+        "optim": torch.optim.Adam,
+        "optim_kwargs": {"lr": lr},
+        "batch_size": batch_size,
+        "ensemble_size": ensemble_size,
+    }
+    return train_config
 
+def create_train_config_NIG(model_config: dict, loss_fct: callable,lambda_reg: float, reg_type: str,
+                            n_epochs: int, lr: float, batch_size: int, ensemble_size: int):
+    train_config = {
+        "model_config": model_config["NormalInverseGamma"],
+        "ensemble": NIGEnsemble,
+        "loss": loss_fct(lambda_reg, reg_type=reg_type),
+        "n_epochs": n_epochs,
+        "optim": torch.optim.Adam,
+        "optim_kwargs": {"lr": lr},
+        "batch_size": batch_size,
+        "ensemble_size": ensemble_size,
+    }
+
+    return train_config
+
+
+"""
+ "model_config": model_config["NormalInverseGamma"],
+            "ensemble": NIGEnsemble,
+            "loss": outer_loss_der(lambda_reg=0.0),
+            "n_epochs": n_epochs,
+            "optim": torch.optim.Adam,
+            "optim_kwargs": {"lr": lr},
+            "batch_size": batch_size,
+            "ensemble_size": ensemble_size_secondary,
+"""
 if __name__ == "__main__":
     conf_reg = create_train_config_regression()
     print(conf_reg.keys())
