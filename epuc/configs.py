@@ -333,6 +333,8 @@ def create_train_config_regression(
             ensemble_size=ensemble_size_secondary
         )
     
+    return train_config_regression
+    
 """"
         "NIG_outer": {
             "model_config": model_config["NormalInverseGamma"],
