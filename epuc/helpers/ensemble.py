@@ -152,6 +152,11 @@ class Ensemble:
             # save loss for each model
             torch.save(self.dict_losses[i], path + f"/loss_{i}.pkl")
 
+    def load_models(self, path):
+        for i, model in enumerate(self.models):
+            model.load_state_dict(torch.load(path + f"/model_{i}.pkl"))
+            self.dict_losses[i] = torch.load(path + f"/loss_{i}.pkl")
+
 
 class GaussianEnsemble(Ensemble):
     """Ensmeble of models which predict a Gaussian distribution, that is, the mean and standard
