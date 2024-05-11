@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-from scipy.stats import wasserstein_distance, beta
+from scipy.stats import wasserstein_distance, beta, norm, invgamma
 from statsmodels.distributions.empirical_distribution import ECDF
 
 
@@ -71,6 +71,18 @@ def parametric_cdf_values_beta(model: torch.nn.Module, x_val: np.ndarray, theta_
 
     return cdf_vals
 
+def parametric_cdf_values_NIG(model: torch.nn.Module, x_val: np.ndarray, mu_vals: np.ndarray,
+                              sigma_vals: np.ndarray):
+    model.eval()
+    with torch.no_grad():
+        # sample parameters of NIG distribution from model
+        gamma, nu, alpha, beta = model(torch.tensor(x_val, dtype=torch.float32))
+
+    # mu is normally distributed with parameters gamma, beta/(alpha -1)*nu
+    mu_dist = norm(loc=gamma.numpy(), scale=np.sqrt((beta/(alpha -1)*nu).numpy()))
+    digma_dist = invgamma()
+
+
 def parametric_cdf_values_second_order(model: torch.nn.Module, x_val: np.ndarray,
                                         theta_vals: np.ndarray, distribution: str = "beta"):
     
@@ -81,7 +93,7 @@ def parametric_cdf_values_second_order(model: torch.nn.Module, x_val: np.ndarray
 
 
 def compute_wasserstein_distance(
-    ens_models: list, second_order_model: torch.nn.Module, x_values: np.ndarray,
+    ens_models: list, second_order_models: list | torch.nn.Module, x_values: np.ndarray,
     theta_interval: tuple = (0, 1), n_splits: int = 1000, distribution: str = "beta"):
     """Compute the Wasserstein distance between the ensemble members and the second order model.
 
@@ -89,8 +101,9 @@ def compute_wasserstein_distance(
     ----------
     ens_models : list
         list of ensemble models
-    second_order_model : torch.nn.Module
-        second order model
+    second_order_models : list or torch.nn.Module
+        second order model(s). If multiple models are given as input, the avergae of
+        the distance to the first order models ecdf is computed. 
     data : np.ndarrays
         data to compute the distance on
 
@@ -100,6 +113,9 @@ def compute_wasserstein_distance(
         list of empirical Wasserstein distances evaluated per instance value
     """
     distances = np.zeros(len(x_values))
+    if isinstance(second_order_models, list):
+        #save variance of the distances
+        var_dists = np.zeros(len(x_values))
     for i in range(len(x_values)):
         x_val = x_values[i].reshape(-1,1)
         # discretize theta space to n_splits
@@ -107,10 +123,25 @@ def compute_wasserstein_distance(
         # caluculate empirical distribution function evaluated at theta of ensemble model
         ecdf_values_ens = ecdf_values_ensemble(ens_models, x_val, theta_vals)
         # caculate cdf of beta distribution evaliuated at theta of second order model 
-        cdf_values_second_order = parametric_cdf_values_second_order(
-            second_order_model, x_val, theta_vals, distribution
-        )
-        # split interval of possible target values into n_splits
-        distances[i] = wasserstein_distance(ecdf_values_ens, cdf_values_second_order)
+        # check if multiple second order models are given
+        if isinstance(second_order_models, list):
+            # calculate the average distance to the ensemble models ecdf
+            # also save variance of the distances
+            dist_second_order = []
+            for model in second_order_models:
+                cdf_values_second_order = parametric_cdf_values_second_order(
+                    model, x_val, theta_vals, distribution
+                )
+                dist_second_order.append(wasserstein_distance(ecdf_values_ens, cdf_values_second_order))
+            dist_second_order = np.mean(dist_second_order)
+            var_dist = np.var(dist_second_order)
+            var_dists[i] = var_dist
+        else:
+            cdf_values_second_order = parametric_cdf_values_second_order(
+                second_order_models, x_val, theta_vals, distribution
+            )
+            dist_second_order = wasserstein_distance(ecdf_values_ens, cdf_values_second_order)
+        distances[i] = dist_second_order
 
-    return distances
+
+    return distances if not isinstance(second_order_models, list) else distances, var_dists
