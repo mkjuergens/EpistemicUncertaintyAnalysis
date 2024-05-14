@@ -45,8 +45,9 @@ def _main_training(
         whether to return the losses per training epoch (of each ensemble member)
     resample_train_data : bool, optional
         whether to resample the training data for each ensemble member, by default True
-    plot_results : bool, optional
-        whether to plot the results, by default True
+    range_x_eval : Optional[tuple], optional
+        range for the evaluation data, by default None. If None, the range is set to
+        (0,1) for classification, (-6,6) for regression.
     """
 
     if not exp_name:
