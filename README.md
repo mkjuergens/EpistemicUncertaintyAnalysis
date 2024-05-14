@@ -1,4 +1,4 @@
-# Code for Paper: Epistemic Uncertainty Quantification through Empirical Risk Optimization
+# Code for Paper: Is Epistemic Uncertainty Faithfilly Represented by Evidential Deep Learning Methods?
 
 This code provides the code to reproduce the experiments from the paper [Is Epistemic Uncertainty Faithfully Represented by Evidential Deep Learning Methods?](https://arxiv.org/abs/2402.09056). 
 
